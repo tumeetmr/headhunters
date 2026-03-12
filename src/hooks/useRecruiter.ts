@@ -32,6 +32,20 @@ export interface RecruiterLink {
   updatedAt: string;
 }
 
+export interface RecruiterInsight {
+  id: string;
+  recruiterProfileId: string;
+  title: string;
+  description: string | null;
+  mediaUrl: string;
+  thumbnailUrl: string | null;
+  status: string;
+  sortOrder: number;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Recruiter {
   id: string;
   userId: string;
@@ -57,7 +71,7 @@ export interface Recruiter {
   tags: RecruiterTag[];
   links: RecruiterLink[];
   activeSearches: unknown[];
-  insights: unknown[];
+  insights: RecruiterInsight[];
 }
 
 interface UseRecruiterReturn {

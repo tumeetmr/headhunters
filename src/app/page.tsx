@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import RecruiterList from "@/components/recruiter-list";
 import Link from "next/link";
 import { useLanguage } from "@/providers/language-provider";
+import TalentSteps from "@/components/talent-steps";
 
 export default function Home() {
   const { t } = useLanguage();
@@ -37,6 +38,7 @@ export default function Home() {
       </div>
     </div>
     <RecruiterList />
+    <TalentSteps />
     </>
   );
 }

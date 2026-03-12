@@ -41,6 +41,19 @@ const translations = {
     "recruiter.email": "Email",
     "recruiter.call": "Call",
     "recruiter.yrsExperience": "yrs experience",
+    "recruiter.insights": "Insights",
+
+    // Steps
+    "steps.title": "Talent verification 4 steps",
+    "steps.subtitle": "We prioritize skills, professionalism, focus on practical abilities, and ensure all talents are rigorously screened and validated to meet today's business needs.",
+    "steps.step1.title": "Client's Needs",
+    "steps.step1.time": "Estimated Time: ~24 hours*",
+    "steps.step2.title": "Talent Evaluation and Shortlistings",
+    "steps.step2.time": "Estimated Time: ~24 hours*",
+    "steps.step3.title": "Interviewing and Evaluation",
+    "steps.step3.time": "Estimated Time: 3-5 days",
+    "steps.step4.title": "Offer/Contract Negotiation",
+    "steps.step4.time": "Estimated Time: 3-5 days",
 
     // Footer
     "footer.home": "Home page",
@@ -90,6 +103,19 @@ const translations = {
     "recruiter.email": "Имэйл",
     "recruiter.call": "Залгах",
     "recruiter.yrsExperience": "жил туршлага",
+    "recruiter.insights": "Медиа",
+
+    // Steps
+    "steps.title": "Талент баталгаажуулалтын 4 алхам",
+    "steps.subtitle": "Бид ур чадвар, мэргэжлийн ёс зүй, практик чадварт анхаарч, бүх талентуудыг өнөөгийн бизнесийн хэрэгцээнд нийцүүлэн нягт шалгаж баталгаажуулдаг.",
+    "steps.step1.title": "Үйлчлүүлэгчийн хэрэгцээ",
+    "steps.step1.time": "Хугацаа: ~24 цаг*",
+    "steps.step2.title": "Талент үнэлгээ ба жагсаалт",
+    "steps.step2.time": "Хугацаа: ~24 цаг*",
+    "steps.step3.title": "Ярилцлага ба үнэлгээ",
+    "steps.step3.time": "Хугацаа: 3-5 хоног",
+    "steps.step4.title": "Санал/Гэрээ хэлэлцээр",
+    "steps.step4.time": "Хугацаа: 3-5 хоног",
 
     // Footer
     "footer.home": "Нүүр хуудас",

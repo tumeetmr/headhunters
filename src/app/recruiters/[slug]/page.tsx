@@ -22,21 +22,88 @@ export default function RecruiterDetailPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="animate-pulse">
-          <div className="h-6 w-32 rounded bg-zinc-100 dark:bg-zinc-800" />
-          <div className="mt-8 flex flex-col gap-8 md:flex-row">
-            <div className="aspect-square w-full max-w-xs shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
-            <div className="flex-1 space-y-4">
-              <div className="h-8 w-2/3 rounded bg-zinc-100 dark:bg-zinc-800" />
-              <div className="h-5 w-1/3 rounded bg-zinc-100 dark:bg-zinc-800" />
-              <div className="h-4 w-1/4 rounded bg-zinc-100 dark:bg-zinc-800" />
-              <div className="mt-6 space-y-2">
-                <div className="h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
-                <div className="h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
-                <div className="h-4 w-3/4 rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* Back link skeleton */}
+        <div className="skeleton h-5 w-28 rounded" />
+
+        {/* Profile header skeleton */}
+        <div className="mt-8 flex flex-col gap-8 md:flex-row">
+          {/* Photo skeleton */}
+          <div className="skeleton aspect-square w-full max-w-xs shrink-0 rounded-2xl" />
+
+          {/* Info skeleton */}
+          <div className="flex-1 space-y-5">
+            {/* Name + badge */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="skeleton h-8 w-56 rounded sm:w-72" />
+                <div className="skeleton h-5 w-40 rounded" />
+                <div className="skeleton h-4 w-52 rounded" />
+              </div>
+              <div className="skeleton h-7 w-24 shrink-0 rounded-full" />
+            </div>
+
+            {/* Meta row skeleton */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="skeleton h-5 w-28 rounded" />
+              <div className="skeleton h-5 w-32 rounded" />
+              <div className="skeleton h-5 w-16 rounded" />
+            </div>
+
+            {/* Contact buttons skeleton */}
+            <div className="flex flex-wrap gap-3">
+              <div className="skeleton h-9 w-24 rounded-lg" />
+              <div className="skeleton h-9 w-20 rounded-lg" />
+              <div className="skeleton h-9 w-28 rounded-lg" />
+            </div>
+
+            {/* Bio skeleton */}
+            <div className="space-y-2 pt-2">
+              <div className="skeleton h-4 w-20 rounded" />
+              <div className="skeleton h-4 w-full rounded" />
+              <div className="skeleton h-4 w-full rounded" />
+              <div className="skeleton h-4 w-3/4 rounded" />
+            </div>
+          </div>
+        </div>
+
+        {/* Tags sections skeleton */}
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-3">
+              <div className="skeleton h-4 w-24 rounded" />
+              <div className="flex flex-wrap gap-2">
+                <div className="skeleton h-7 w-20 rounded-md" />
+                <div className="skeleton h-7 w-28 rounded-md" />
+                <div className="skeleton h-7 w-16 rounded-md" />
+                <div className="skeleton h-7 w-24 rounded-md" />
               </div>
             </div>
+          ))}
+        </div>
+
+        {/* Skills skeleton */}
+        <div className="mt-12 space-y-3">
+          <div className="skeleton h-4 w-16 rounded" />
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="skeleton h-8 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* Insights skeleton */}
+        <div className="mt-12 space-y-4">
+          <div className="skeleton h-4 w-20 rounded" />
+          <div className="flex flex-wrap justify-center gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="w-56 overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="skeleton aspect-9/16 w-full" />
+                <div className="space-y-2 p-4">
+                  <div className="skeleton h-4 w-32 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -66,7 +133,7 @@ export default function RecruiterDetailPage() {
   const phoneLink = recruiter.links.find((l) => l.type === "PHONE");
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 py-10 sm:px-6 lg:px-8">
       {/* Back link */}
       <Link
         href="/"
@@ -235,6 +302,37 @@ export default function RecruiterDetailPage() {
                 {skill.name}
               </span>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Insights */}
+      {recruiter.insights.filter((i) => i.status === "PUBLISHED").length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            {t("recruiter.insights")}
+          </h2>
+          <div className="mt-4 flex flex-wrap justify-center gap-6">
+            {recruiter.insights
+              .filter((i) => i.status === "PUBLISHED")
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((insight) => (
+                <div
+                  key={insight.id}
+                  className="w-80 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  <div className="relative aspect-9/16 w-full">
+                    <iframe
+                      src={insight.mediaUrl}
+                      title={insight.title}
+                      className="h-full w-full"
+                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       )}
