@@ -6,6 +6,7 @@ import RecruiterList from "@/components/recruiter-list";
 import Link from "next/link";
 import { useLanguage } from "@/providers/language-provider";
 import TalentSteps from "@/components/talent-steps";
+import WhyLambda from "@/components/why-lambda";
 
 export default function Home() {
   const { t } = useLanguage();
@@ -39,6 +40,7 @@ export default function Home() {
     </div>
     <RecruiterList />
     <TalentSteps />
+    <WhyLambda />
     </>
   );
 }
