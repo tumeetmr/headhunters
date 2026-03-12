@@ -6,9 +6,9 @@ import { Facebook, Linkedin, Instagram } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 
 const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: Facebook, href: "https://www.facebook.com/lambda.global.official", label: "Facebook" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/lambdaglobal", label: "LinkedIn" },
+  { icon: Instagram, href: "https://www.instagram.com/lambda.global", label: "Instagram" },
 ];
 
 export default function Footer() {
@@ -36,7 +36,7 @@ export default function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-[#212B36] transition-colors hover:text-[#212B36]/80 dark:text-zinc-400 dark:hover:text-zinc-50"
+              className="text-sm font-medium text-primary-text transition-colors hover:text-primary-text/80 dark:text-zinc-400 dark:hover:text-zinc-50"
             >
               {link.label}
             </Link>
@@ -47,7 +47,7 @@ export default function Footer() {
       {/* Middle: Contact info + Social icons */}
       <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
         {/* Contact info */}
-        <div className="flex flex-col gap-5 text-sm font-medium text-[#212B36] dark:text-zinc-100">
+        <div className="flex flex-col gap-5 text-sm font-bold text-primary-text dark:text-zinc-100">
           <p>+976 8888 8003</p>
           <p>hello@lambda.global</p>
           <p>
@@ -66,7 +66,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-[#212B36] transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 md:h-20 md:w-20"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-primary-text transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 md:h-20 md:w-20"
             >
               <social.icon className="h-5 w-5 md:h-7 md:w-7" />
             </a>
@@ -81,10 +81,10 @@ export default function Footer() {
       <div className="mt-6 flex flex-col items-start justify-between gap-4 text-sm text-zinc-500 dark:text-zinc-400 md:flex-row md:items-center">
         <p>{t("footer.copyright")}</p>
         <div className="flex items-center gap-6">
-          <Link href="/privacy" className="transition-colors hover:text-[#212B36] dark:hover:text-zinc-50">
+          <Link href="/privacy" className="transition-colors hover:text-primary-text/80 dark:hover:text-zinc-50">
             {t("footer.privacy")}
           </Link>
-          <Link href="/terms" className="transition-colors hover:text-[#212B36] dark:hover:text-zinc-50">
+          <Link href="/terms" className="transition-colors hover:text-primary-text/80 dark:hover:text-zinc-50">
             {t("footer.terms")}
           </Link>
         </div>

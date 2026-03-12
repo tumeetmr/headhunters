@@ -45,12 +45,12 @@ function RecruiterCard({
   return (
     <div
       ref={cardRef}
-      className="opacity-0 translate-y-6 transition-all duration-700 ease-out"
+      className="opacity-0 translate-y-6 transition-all duration-350 ease-out"
       style={{
         ...(isVisible && {
           opacity: 1,
           transform: "translateY(0)",
-          transitionDelay: `${index * 100}ms`,
+          transitionDelay: `${index * 40}ms`,
         }),
       }}
     >
