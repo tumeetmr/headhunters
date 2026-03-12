@@ -1,15 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Facebook, Linkedin, Instagram } from "lucide-react";
-
-const footerLinks = [
-  { label: "Home page", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Features", href: "/features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Contact", href: "/contact" },
-  { label: "Reviews", href: "/reviews" },
-];
+import { useLanguage } from "@/providers/language-provider";
 
 const socialLinks = [
   { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
@@ -18,14 +12,26 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
+
+  const footerLinks = [
+    { label: t("footer.home"), href: "/" },
+    { label: t("footer.about"), href: "https://lambda.global/about#ourapproach" },
+    { label: t("footer.features"), href: "/features" },
+    { label: t("footer.pricing"), href: "/pricing" },
+    { label: t("footer.contact"), href: "/contact" },
+    { label: t("footer.reviews"), href: "/reviews" },
+  ];
+
   return (
-    <footer className="w-full bg-white px-8 pt-12 pb-8 dark:bg-black md:px-16 lg:px-24">
+    <footer className="w-full bg-white dark:bg-black">
+      <div className="mx-auto w-full max-w-7xl px-4 pt-10 pb-6 sm:px-6 md:pt-12 md:pb-8 lg:px-8">
       {/* Top row: Logo + Nav links */}
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/image/lambda.png" alt="Lambda logo" width={100} height={32} priority />
         </Link>
-        <nav className="flex flex-wrap items-center gap-6">
+        <nav className="flex flex-wrap items-center gap-4 md:gap-6">
           {footerLinks.map((link) => (
             <Link
               key={link.href}
@@ -60,9 +66,9 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex h-20 w-20 items-center justify-center rounded-2xl bg-zinc-100 text-[#212B36] transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-[#212B36] transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 md:h-20 md:w-20"
             >
-              <social.icon className="h-7 w-7" />
+              <social.icon className="h-5 w-5 md:h-7 md:w-7" />
             </a>
           ))}
         </div>
@@ -73,15 +79,16 @@ export default function Footer() {
 
       {/* Bottom row: Copyright + Legal links */}
       <div className="mt-6 flex flex-col items-start justify-between gap-4 text-sm text-zinc-500 dark:text-zinc-400 md:flex-row md:items-center">
-        <p>© 2024 Ламбда. Бүх эрх хуулиар хамгаалагдсан</p>
+        <p>{t("footer.copyright")}</p>
         <div className="flex items-center gap-6">
           <Link href="/privacy" className="transition-colors hover:text-[#212B36] dark:hover:text-zinc-50">
-            Нууцлалын бодлого
+            {t("footer.privacy")}
           </Link>
           <Link href="/terms" className="transition-colors hover:text-[#212B36] dark:hover:text-zinc-50">
-            Үйлчилгээний нөхцөл
+            {t("footer.terms")}
           </Link>
         </div>
+      </div>
       </div>
     </footer>
   );

@@ -1,0 +1,263 @@
+"use client";
+
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, MapPin, Clock, Mail, Phone, Linkedin, Star, ExternalLink } from "lucide-react";
+import { useRecruiterBySlug } from "@/hooks/useRecruiter";
+import { useLanguage } from "@/providers/language-provider";
+
+function formatSlugToName(slug: string) {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+export default function RecruiterDetailPage() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+  const { recruiter, loading, error } = useRecruiterBySlug(slug);
+  const { t } = useLanguage();
+
+  if (loading) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="animate-pulse">
+          <div className="h-6 w-32 rounded bg-zinc-100 dark:bg-zinc-800" />
+          <div className="mt-8 flex flex-col gap-8 md:flex-row">
+            <div className="aspect-square w-full max-w-xs shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+            <div className="flex-1 space-y-4">
+              <div className="h-8 w-2/3 rounded bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-5 w-1/3 rounded bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-4 w-1/4 rounded bg-zinc-100 dark:bg-zinc-800" />
+              <div className="mt-6 space-y-2">
+                <div className="h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-4 w-3/4 rounded bg-zinc-100 dark:bg-zinc-800" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !recruiter) {
+    return (
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 py-16 text-center sm:px-6 lg:px-8">
+        <p className="text-lg text-zinc-500">{t("recruiters.notFound")}</p>
+        <Link
+          href="/"
+          className="mt-4 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+        >
+          {t("recruiter.backHome")}
+        </Link>
+      </div>
+    );
+  }
+
+  const displayName = formatSlugToName(recruiter.slug);
+  const expertiseTags = recruiter.tags.filter((t) => t.type === "EXPERTISE").sort((a, b) => a.sortOrder - b.sortOrder);
+  const industryTags = recruiter.tags.filter((t) => t.type === "INDUSTRY").sort((a, b) => a.sortOrder - b.sortOrder);
+  const languageTags = recruiter.tags.filter((t) => t.type === "LANGUAGE").sort((a, b) => a.sortOrder - b.sortOrder);
+  const certTags = recruiter.tags.filter((t) => t.type === "CERTIFICATION").sort((a, b) => a.sortOrder - b.sortOrder);
+  const linkedinLink = recruiter.links.find((l) => l.type === "LINKEDIN");
+  const phoneLink = recruiter.links.find((l) => l.type === "PHONE");
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* Back link */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {t("recruiter.back")}
+      </Link>
+
+      {/* Profile header */}
+      <div className="mt-8 flex flex-col gap-8 md:flex-row">
+        {/* Photo */}
+        <div className="relative aspect-square w-full max-w-xs shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
+          {recruiter.photoUrl ? (
+            <Image
+              src={recruiter.photoUrl}
+              alt={displayName}
+              fill
+              className="object-cover"
+              sizes="320px"
+              priority
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800">
+              <span className="text-6xl font-bold text-zinc-400 dark:text-zinc-500">
+                {displayName.charAt(0)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-primary-text dark:text-zinc-50 sm:text-3xl">
+                {displayName}
+              </h1>
+              <p className="mt-1 text-base text-zinc-500 dark:text-zinc-400">
+                {recruiter.title}
+              </p>
+              {recruiter.tagline && (
+                <p className="mt-1 text-sm italic text-zinc-400 dark:text-zinc-500">
+                  {recruiter.tagline}
+                </p>
+              )}
+            </div>
+            {recruiter.isLeadPartner && recruiter.partnerBadge && (
+              <span className="shrink-0 rounded-full bg-linear-to-r from-[#36CCC7] to-[#34E89E] px-3 py-1 text-xs font-semibold text-white">
+                {recruiter.partnerBadge}
+              </span>
+            )}
+          </div>
+
+          {/* Meta row */}
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
+            {recruiter.location && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                {recruiter.location}
+              </span>
+            )}
+            {recruiter.yearsExperience != null && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                {recruiter.yearsExperience} {t("recruiter.yrsExperience")}
+              </span>
+            )}
+            {recruiter.rating > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                {recruiter.rating.toFixed(1)}
+              </span>
+            )}
+          </div>
+
+          {/* Contact links */}
+          <div className="mt-4 flex flex-wrap gap-3">
+            {recruiter.publicEmail && (
+              <a
+                href={`mailto:${recruiter.publicEmail}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                <Mail className="h-4 w-4" />
+                {t("recruiter.email")}
+              </a>
+            )}
+            {(recruiter.publicPhone || phoneLink) && (
+              <a
+                href={`tel:${recruiter.publicPhone || phoneLink?.url}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                <Phone className="h-4 w-4" />
+                {t("recruiter.call")}
+              </a>
+            )}
+            {linkedinLink && (
+              <a
+                href={linkedinLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                <Linkedin className="h-4 w-4" />
+                LinkedIn
+              </a>
+            )}
+            {recruiter.links
+              .filter((l) => l.type !== "LINKEDIN" && l.type !== "PHONE")
+              .map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {link.label}
+                </a>
+              ))}
+          </div>
+
+          {/* Bio */}
+          {recruiter.bio && (
+            <div className="mt-6">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                {t("recruiter.about")}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 whitespace-pre-line">
+                {recruiter.bio}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tags sections */}
+      <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
+        {expertiseTags.length > 0 && (
+          <TagSection title={t("recruiter.expertise")} tags={expertiseTags} />
+        )}
+        {industryTags.length > 0 && (
+          <TagSection title={t("recruiter.industries")} tags={industryTags} />
+        )}
+        {languageTags.length > 0 && (
+          <TagSection title={t("recruiter.languages")} tags={languageTags} />
+        )}
+        {certTags.length > 0 && (
+          <TagSection title={t("recruiter.certifications")} tags={certTags} />
+        )}
+      </div>
+
+      {/* Skills */}
+      {recruiter.skills.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            {t("recruiter.skills")}
+          </h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {recruiter.skills.map((skill) => (
+              <span
+                key={skill.id}
+                className="rounded-full bg-linear-to-r from-[#36CCC7]/10 to-[#34E89E]/10 px-3 py-1 text-sm font-medium text-[#2BA8A3] dark:text-[#36CCC7]"
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TagSection({ title, tags }: { title: string; tags: { id: string; value: string }[] }) {
+  return (
+    <div>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        {title}
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <span
+            key={tag.id}
+            className="inline-block rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+          >
+            {tag.value}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}

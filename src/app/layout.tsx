@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import { LanguageProvider } from "@/providers/language-provider";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,9 +26,11 @@ export default function RootLayout({
         className={`${manrope.variable} antialiased`}
         style={{ fontFamily: "var(--font-manrope), sans-serif" }}
       >
-        <Navbar />
-        {children}
-        <Footer />
+        <LanguageProvider>
+          <Navbar />
+          {children}
+          <Footer />
+        </LanguageProvider>
       </body>
     </html>
   );
