@@ -1,0 +1,183 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { useLanguage } from "@/providers/language-provider";
+
+type LoginRole = "RECRUITER" | "COMPANY";
+
+export default function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasCallbackUrl = searchParams.has("callbackUrl");
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const { t } = useLanguage();
+
+  const [role, setRole] = useState<LoginRole>("RECRUITER");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  function getOnboardingRoute(nextRole: LoginRole) {
+    return nextRole === "COMPANY"
+      ? "/register/create/company"
+      : "/register/create/recruiter";
+  }
+
+  async function handlePasswordSignIn(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      setError(t("login.error"));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const result = await signIn("credentials", {
+      email: normalizedEmail,
+      password,
+      role,
+      redirect: false,
+      callbackUrl,
+    });
+
+    setLoading(false);
+
+    if (!result || result.error) {
+      setError(t("login.error"));
+      return;
+    }
+
+    const destination = hasCallbackUrl ? result.url ?? callbackUrl : getOnboardingRoute(role);
+
+    router.push(destination);
+    router.refresh();
+  }
+
+  return (
+    <div className="w-full max-w-md rounded-2xl bg-white px-8 py-10 shadow-sm">
+      {/* Logo */}
+      <div className="mb-8">
+        <Image
+          src="/image/lambda.png"
+          alt="Lambda"
+          width={108}
+          height={22}
+          priority
+        />
+      </div>
+
+      {/* Heading */}
+      <h1 className="mb-6 text-[1.75rem] font-bold leading-tight tracking-tight text-primary-text">
+        {t("login.title")}
+      </h1>
+
+      {/* Role toggle */}
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
+        <button
+          type="button"
+          onClick={() => setRole("RECRUITER")}
+          className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            role === "RECRUITER"
+              ? "bg-white text-primary-text shadow-sm"
+              : "text-zinc-500 hover:text-primary-text"
+          }`}
+        >
+          {t("login.recruiter")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setRole("COMPANY")}
+          className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            role === "COMPANY"
+              ? "bg-white text-primary-text shadow-sm"
+              : "text-zinc-500 hover:text-primary-text"
+          }`}
+        >
+          {t("login.company")}
+        </button>
+      </div>
+
+      <form onSubmit={handlePasswordSignIn}>
+        {/* Email */}
+        <div className="mb-3">
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-primary-text"
+          >
+            {t("login.email")}
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full rounded-xl border border-zinc-200 px-4 py-3.5 text-sm text-primary-text outline-none transition focus:border-zinc-400"
+          />
+        </div>
+
+        {/* Password — revealed after clicking the password button */}
+        {showPassword && (
+          <div className="mb-3">
+            <label
+              htmlFor="password"
+              className="mb-1.5 block text-sm font-medium text-primary-text"
+            >
+              {t("login.password")}
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoFocus
+              className="w-full rounded-xl border border-zinc-200 px-4 py-3.5 text-sm text-primary-text outline-none transition focus:border-zinc-400"
+            />
+          </div>
+        )}
+
+        {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+
+        {/* Primary action */}
+        {showPassword ? (
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-primary-text py-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? t("login.signingIn") : t("login.confirm")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowPassword(true)}
+            className="w-full rounded-xl bg-primary-text py-3.5 text-sm font-medium text-white transition hover:opacity-90"
+          >
+            {t("login.withPassword")}
+          </button>
+        )}
+      </form>
+
+      {/* Register link */}
+      <p className="mt-8 text-center text-sm text-zinc-500">
+        {t("login.newUser")}{" "}
+        <Link
+          href="/register"
+          className="font-semibold text-primary-text hover:underline"
+        >
+          {t("login.register")}
+        </Link>
+      </p>
+    </div>
+  );
+}

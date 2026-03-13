@@ -22,6 +22,7 @@ export default function Navbar() {
     { label: t("nav.jobs"), ariaLabel: "Browse jobs and projects", link: "/jobs" },
     { label: t("nav.applications"), ariaLabel: "View my applications", link: "/applications" },
     { label: t("nav.headhunting"), ariaLabel: "Headhunting services", link: "/headhunting" },
+    { label: t("nav.login"), ariaLabel: "Go to login", link: "/login" },
   ];
 
   const socialItems = [
@@ -57,9 +58,14 @@ export default function Navbar() {
         {/* Right: Language + Profile (Desktop only) */}
         <div className="hidden items-center gap-4 md:flex">
           <LanguageSwitcher />
-          <button className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-primary-text transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">
+          <Link
+            href="/login"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-primary-text transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            aria-label={t("nav.login")}
+            title={t("nav.login")}
+          >
             <User className="h-5 w-5" />
-          </button>
+          </Link>
         </div>
       </div>
 

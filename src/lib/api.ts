@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import { getSession } from "next-auth/react";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -8,9 +9,9 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+api.interceptors.request.use(async (config) => {
+  const session = await getSession();
+  const token = session?.accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,7 +23,6 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
         window.location.href = "/login";
       }
     }
