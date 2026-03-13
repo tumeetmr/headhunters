@@ -86,6 +86,15 @@ export default function CreateCompanyPage() {
         return;
       }
 
+      if (session.user.role !== "COMPANY") {
+        router.replace(
+          session.user.role === "RECRUITER" 
+            ? "/register/create/recruiter" 
+            : "/"
+        );
+        return;
+      }
+
       setUserId(session.user.id ?? "");
       setEmail(session.user.email ?? "");
       setIsCheckingSession(false);
