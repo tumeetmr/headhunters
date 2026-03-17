@@ -5,16 +5,18 @@ import { get } from "@/lib/api";
 
 export interface RecruiterSkill {
   id: string;
-  name: string;
+  type: string;
+  value: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface RecruiterTag {
   id: string;
-  recruiterProfileId: string;
-  type: "EXPERTISE" | "INDUSTRY" | "LANGUAGE" | "CERTIFICATION";
-  value: string;
+  recruiterProfileId: string | null;
+  companyId: string | null;
+  skillId: string;
+  skill: RecruiterSkill;
   meta: unknown | null;
   sortOrder: number;
   createdAt: string;
@@ -67,7 +69,6 @@ export interface Recruiter {
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  skills: RecruiterSkill[];
   tags: RecruiterTag[];
   links: RecruiterLink[];
   activeSearches: unknown[];

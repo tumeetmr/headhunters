@@ -4,7 +4,8 @@ import { gsap } from 'gsap';
 export interface StaggeredMenuItem {
   label: string;
   ariaLabel: string;
-  link: string;
+  link?: string;
+  onClick?: () => void | Promise<void>;
 }
 export interface StaggeredMenuSocialItem {
   label: string;
@@ -485,16 +486,29 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
               {items && items.length ? (
                 items.map((it, idx) => (
                   <li className="sm-panel-itemWrap relative overflow-hidden leading-none" key={it.label + idx}>
-                    <a
-                      className="sm-panel-item relative text-black font-semibold text-[2.5rem] cursor-pointer leading-none tracking-[-2px] uppercase transition-[background,color] duration-150 ease-linear inline-block no-underline pr-[1.4em]"
-                      href={it.link}
-                      aria-label={it.ariaLabel}
-                      data-index={idx + 1}
-                    >
-                      <span className="sm-panel-itemLabel inline-block origin-[50%_100%] will-change-transform">
-                        {it.label}
-                      </span>
-                    </a>
+                    {it.onClick ? (
+                      <button
+                        className="sm-panel-item relative text-black font-semibold text-[2.5rem] cursor-pointer leading-none tracking-[-2px] uppercase transition-[background,color] duration-150 ease-linear inline-block no-underline pr-[1.4em] border-0 bg-transparent text-left"
+                        onClick={it.onClick}
+                        aria-label={it.ariaLabel}
+                        data-index={idx + 1}
+                      >
+                        <span className="sm-panel-itemLabel inline-block origin-[50%_100%] will-change-transform">
+                          {it.label}
+                        </span>
+                      </button>
+                    ) : (
+                      <a
+                        className="sm-panel-item relative text-black font-semibold text-[2.5rem] cursor-pointer leading-none tracking-[-2px] uppercase transition-[background,color] duration-150 ease-linear inline-block no-underline pr-[1.4em]"
+                        href={it.link}
+                        aria-label={it.ariaLabel}
+                        data-index={idx + 1}
+                      >
+                        <span className="sm-panel-itemLabel inline-block origin-[50%_100%] will-change-transform">
+                          {it.label}
+                        </span>
+                      </a>
+                    )}
                   </li>
                 ))
               ) : (

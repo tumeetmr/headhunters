@@ -3,9 +3,14 @@
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Clock, Mail, Phone, Linkedin, Star, ExternalLink } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, MapPin, Clock, Mail, Phone, Linkedin, Star, ExternalLink, Send, Loader } from "lucide-react";
 import { useRecruiterBySlug } from "@/hooks/useRecruiter";
 import { useLanguage } from "@/providers/language-provider";
+import { fetchFormTemplates, submitRecruiterRequest, type FormTemplate, type FormAnswer } from "@/lib/forms-api";
+import { FormRenderer } from "@/components/forms/form-renderer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function formatSlugToName(slug: string) {
   return slug
@@ -19,6 +24,60 @@ export default function RecruiterDetailPage() {
   const slug = params.slug;
   const { recruiter, loading, error } = useRecruiterBySlug(slug);
   const { t } = useLanguage();
+  const { data: session } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [formTemplate, setFormTemplate] = useState<FormTemplate | null>(null);
+  const [isLoadingForm, setIsLoadingForm] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const isCompany = session?.user?.role === "COMPANY";
+
+  // Fetch form template on mount
+  useEffect(() => {
+    const loadFormTemplate = async () => {
+      try {
+        setIsLoadingForm(true);
+        const templates = await fetchFormTemplates();
+        const activeTemplate = templates.find((t) => t.isActive) || templates[0];
+        setFormTemplate(activeTemplate || null);
+      } catch (error) {
+        console.error("Failed to load form template:", error);
+        setFormTemplate(null);
+      } finally {
+        setIsLoadingForm(false);
+      }
+    };
+
+    loadFormTemplate();
+  }, []);
+
+  const handleFormSubmit = async (answers: FormAnswer[]) => {
+    if (!recruiter || !formTemplate) return;
+
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      await submitRecruiterRequest({
+        formTemplateId: formTemplate.id,
+        recruiterId: recruiter.id,
+        answers,
+      });
+
+      setMessage({ type: "success", text: "Request sent successfully!" });
+      setIsFormOpen(false);
+      
+      // Reset after 2 seconds
+      setTimeout(() => setMessage(null), 2000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to send request. Please try again.";
+      setMessage({ type: "error", text: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -125,10 +184,22 @@ export default function RecruiterDetailPage() {
   }
 
   const displayName = formatSlugToName(recruiter.slug);
-  const expertiseTags = recruiter.tags.filter((t) => t.type === "EXPERTISE").sort((a, b) => a.sortOrder - b.sortOrder);
-  const industryTags = recruiter.tags.filter((t) => t.type === "INDUSTRY").sort((a, b) => a.sortOrder - b.sortOrder);
-  const languageTags = recruiter.tags.filter((t) => t.type === "LANGUAGE").sort((a, b) => a.sortOrder - b.sortOrder);
-  const certTags = recruiter.tags.filter((t) => t.type === "CERTIFICATION").sort((a, b) => a.sortOrder - b.sortOrder);
+  const expertiseTags = recruiter.tags
+    .filter((t) => t.skill.type === "EXPERTISE")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const industryTags = recruiter.tags
+    .filter((t) => t.skill.type === "INDUSTRY")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const languageTags = recruiter.tags
+    .filter((t) => t.skill.type === "LANGUAGE")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const certTags = recruiter.tags
+    .filter((t) => t.skill.type === "CERTIFICATION")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const skills = recruiter.tags
+    .filter((t) => t.skill.type === "SKILL")
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((t) => t.skill);
   const linkedinLink = recruiter.links.find((l) => l.type === "LINKEDIN");
   const phoneLink = recruiter.links.find((l) => l.type === "PHONE");
 
@@ -255,7 +326,46 @@ export default function RecruiterDetailPage() {
                   {link.label}
                 </a>
               ))}
+
+            {/* Request Button for Companies */}
+            {isCompany && (
+              <button
+                onClick={() => setIsFormOpen(true)}
+                disabled={isSubmitting || isLoadingForm || !formTemplate}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition-all hover:bg-emerald-600 disabled:opacity-60 dark:border-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    Requesting...
+                  </>
+                ) : isLoadingForm ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Request Recruiter
+                  </>
+                )}
+              </button>
+            )}
           </div>
+
+          {/* Status Message */}
+          {message && (
+            <div
+              className={`mt-4 rounded-lg border px-4 py-2.5 text-sm font-medium ${
+                message.type === "success"
+                  ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
+                  : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
 
           {/* Bio */}
           {recruiter.bio && (
@@ -288,18 +398,18 @@ export default function RecruiterDetailPage() {
       </div>
 
       {/* Skills */}
-      {recruiter.skills.length > 0 && (
+      {skills.length > 0 && (
         <div className="mt-12">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             {t("recruiter.skills")}
           </h2>
           <div className="mt-3 flex flex-wrap gap-2">
-            {recruiter.skills.map((skill) => (
+            {skills.map((skill) => (
               <span
                 key={skill.id}
                 className="rounded-full bg-linear-to-r from-[#36CCC7]/10 to-[#34E89E]/10 px-3 py-1 text-sm font-medium text-[#2BA8A3] dark:text-[#36CCC7]"
               >
-                {skill.name}
+                {skill.value}
               </span>
             ))}
           </div>
@@ -336,11 +446,39 @@ export default function RecruiterDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Request Form Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Request {displayName}</DialogTitle>
+          </DialogHeader>
+          {formTemplate && (
+            <FormRenderer
+              template={formTemplate}
+              isLoading={isSubmitting}
+              onSubmit={handleFormSubmit}
+              submitButtonLabel="Send Request"
+            />
+          )}
+          {message && (
+            <div
+              className={`rounded-lg border px-4 py-2.5 text-sm font-medium ${
+                message.type === "success"
+                  ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
+                  : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function TagSection({ title, tags }: { title: string; tags: { id: string; value: string }[] }) {
+function TagSection({ title, tags }: { title: string; tags: { id: string; skill: { value: string } }[] }) {
   return (
     <div>
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
@@ -352,7 +490,7 @@ function TagSection({ title, tags }: { title: string; tags: { id: string; value:
             key={tag.id}
             className="inline-block rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
           >
-            {tag.value}
+            {tag.skill.value}
           </span>
         ))}
       </div>

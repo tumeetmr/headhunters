@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { User } from "lucide-react";
+import { User, LogOut, Bell } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import StaggeredMenu from "@/components/menu";
 import LanguageSwitcher from "@/components/language-switcher";
 import { useLanguage } from "@/providers/language-provider";
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session;
 
   const navLinks = [
     { label: t("nav.home"), href: "/" },
@@ -22,7 +25,13 @@ export default function Navbar() {
     { label: t("nav.jobs"), ariaLabel: "Browse jobs and projects", link: "/jobs" },
     { label: t("nav.applications"), ariaLabel: "View my applications", link: "/applications" },
     { label: t("nav.headhunting"), ariaLabel: "Headhunting services", link: "/headhunting" },
-    { label: t("nav.login"), ariaLabel: "Go to login", link: "/login" },
+    ...(isLoggedIn 
+      ? [
+          { label: "Profile", ariaLabel: "Go to profile", link: "/profile" },
+          { label: "Logout", ariaLabel: "Sign out", onClick: () => signOut({ callbackUrl: '/' }) }
+        ]
+      : [{ label: t("nav.login"), ariaLabel: "Go to login", link: "/login" }]
+    )
   ];
 
   const socialItems = [
@@ -58,19 +67,43 @@ export default function Navbar() {
         {/* Right: Language + Profile (Desktop only) */}
         <div className="hidden items-center gap-4 md:flex">
           <LanguageSwitcher />
-          <Link
-            href="/login"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-primary-text transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            aria-label={t("nav.login")}
-            title={t("nav.login")}
-          >
-            <User className="h-5 w-5" />
-          </Link>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/profile"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-primary-text transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                aria-label="Profile"
+                title="Profile"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-red-500 transition-colors hover:bg-red-50 dark:border-zinc-700 dark:hover:bg-red-950/30"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-primary-text transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              aria-label={t("nav.login")}
+              title={t("nav.login")}
+            >
+              <User className="h-5 w-5" />
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Mobile Menu - StaggeredMenu */}
       <div className="md:hidden">
+        <div className="flex items-center justify-between px-4 py-2">
+          <LanguageSwitcher />
+        </div>
         <StaggeredMenu
           position="right"
           items={menuItems}

@@ -32,7 +32,7 @@ function RecruiterCard({
   }, []);
 
   const expertiseTags = recruiter.tags
-    .filter((tag) => tag.type === "EXPERTISE")
+    .filter((tag) => tag.skill.type === "EXPERTISE")
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .slice(0, 3);
 
@@ -111,7 +111,7 @@ function RecruiterCard({
                     key={tag.id}
                     className="inline-block rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium text-zinc-500 transition-colors duration-300 group-hover:bg-zinc-800 group-hover:text-white dark:bg-zinc-800 dark:text-zinc-400 dark:group-hover:bg-zinc-200 dark:group-hover:text-zinc-800"
                   >
-                    {tag.value}
+                    {tag.skill.value}
                   </span>
                 ))}
               </div>

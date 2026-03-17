@@ -65,4 +65,12 @@ export async function patch<T>(
   return response.data;
 }
 
+export async function del<T>(
+  url: string,
+  config?: AxiosRequestConfig
+): Promise<T> {
+  const response: AxiosResponse<T> = await api.delete(url, config);
+  return response.data;
+}
+
 export default api;

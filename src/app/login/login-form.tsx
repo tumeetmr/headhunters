@@ -19,15 +19,8 @@ export default function LoginForm() {
   const [role, setRole] = useState<LoginRole>("RECRUITER");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  function getOnboardingRoute(nextRole: LoginRole) {
-    return nextRole === "COMPANY"
-      ? "/register/create/company"
-      : "/register/create/recruiter";
-  }
 
   async function handlePasswordSignIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,7 +49,7 @@ export default function LoginForm() {
       return;
     }
 
-    const destination = hasCallbackUrl ? result.url ?? callbackUrl : getOnboardingRoute(role);
+    const destination = hasCallbackUrl ? result.url ?? callbackUrl : "/profile";
 
     router.push(destination);
     router.refresh();
@@ -125,47 +118,34 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* Password — revealed after clicking the password button */}
-        {showPassword && (
-          <div className="mb-3">
-            <label
-              htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-primary-text"
-            >
-              {t("login.password")}
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoFocus
-              className="w-full rounded-xl border border-zinc-200 px-4 py-3.5 text-sm text-primary-text outline-none transition focus:border-zinc-400"
-            />
-          </div>
-        )}
+        {/* Password */}
+        <div className="mb-3">
+          <label
+            htmlFor="password"
+            className="mb-1.5 block text-sm font-medium text-primary-text"
+          >
+            {t("login.password")}
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full rounded-xl border border-zinc-200 px-4 py-3.5 text-sm text-primary-text outline-none transition focus:border-zinc-400"
+          />
+        </div>
 
         {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
         {/* Primary action */}
-        {showPassword ? (
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-primary-text py-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? t("login.signingIn") : t("login.confirm")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowPassword(true)}
-            className="w-full rounded-xl bg-primary-text py-3.5 text-sm font-medium text-white transition hover:opacity-90"
-          >
-            {t("login.withPassword")}
-          </button>
-        )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-xl bg-primary-text py-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+        >
+          {loading ? t("login.signingIn") : t("login.confirm")}
+        </button>
       </form>
 
       {/* Register link */}

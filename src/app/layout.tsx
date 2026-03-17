@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { LanguageProvider } from "@/providers/language-provider";
+import { SessionProvider } from "@/providers/session-provider";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,11 +26,13 @@ export default function RootLayout({
         className={`${manrope.variable} antialiased`}
         style={{ fontFamily: "var(--font-manrope), sans-serif" }}
       >
-        <LanguageProvider>
-          <Navbar />
-          {children}
-          <Footer />
-        </LanguageProvider>
+        <SessionProvider>
+          <LanguageProvider>
+            <Navbar />
+            {children}
+            <Footer />
+          </LanguageProvider>
+        </SessionProvider>
       </body>
     </html>
   );
