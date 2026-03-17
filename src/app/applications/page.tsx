@@ -91,11 +91,11 @@ export default function ApplicationsPage() {
 
   const pageTitle = isRecruiter ? "Миний өргөдлүүд" : "My Applications";
   const pageSubtitle = isRecruiter
-    ? "Компаниудаас хүлээн авсан сонуулгын хүсэлтүүд"
+    ? "Компаниудаас хүлээн авсан хүсэлтүүд"
     : "Job applications you have submitted";
-  const emptyMessage = isRecruiter ? "Одоохдоо сонуулгын хүсэлт алга" : "No applications yet";
+  const emptyMessage = isRecruiter ? "Хүсэлт байхгүй байна" : "No applications yet";
   const emptyDescription = isRecruiter
-    ? "Компаниудаас хүлээн авсан сонуулгын хүсэлтүүд энд харагдах болно"
+    ? "Компаниудаас хүлээн авсан хүсэлтүүд энд харагдах болно"
     : "Your job applications will appear here";
 
   return (
@@ -219,7 +219,7 @@ export default function ApplicationsPage() {
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isRecruiter ? "Сонуулгын хүсэлтийн дэлгэрэнгүй" : "Application Details"}
+              {isRecruiter ? "Хүсэлтийн дэлгэрэнгүй" : "Application Details"}
             </DialogTitle>
           </DialogHeader>
 
@@ -251,7 +251,7 @@ export default function ApplicationsPage() {
               {selectedRequest.answers && selectedRequest.answers.length > 0 && (
                 <div className="border-b border-zinc-200 pb-4 dark:border-zinc-700">
                   <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-                    {isRecruiter ? "Сонуулгын дэлгэрэнгүй" : "Details"}
+                    {isRecruiter ? "Хүсэлтийн дэлгэрэнгүй" : "Details"}
                   </h3>
                   <div className="mt-4 space-y-4">
                     {selectedRequest.answers.map((answer, idx) => (
