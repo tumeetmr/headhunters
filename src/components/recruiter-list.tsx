@@ -1,11 +1,12 @@
 "use client";
 
-import { useRecruiter, Recruiter } from "@/hooks/useRecruiter";
+import { Recruiter } from "@/hooks/useRecruiter";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/providers/language-provider";
 import { useRef, useEffect, useState } from "react";
 import { MapPin, ArrowUpRight } from "lucide-react";
+import { get } from "@/lib/api";
 
 function RecruiterCard({
   recruiter,
@@ -123,9 +124,50 @@ function RecruiterCard({
   );
 }
 
-export default function RecruiterList() {
-  const { recruiters, loading, error } = useRecruiter();
+export default function RecruiterList({
+  isLeadPartner,
+  limit,
+  columns = "lg:grid-cols-3",
+}: {
+  isLeadPartner?: boolean;
+  limit?: number;
+  columns?: string;
+} = {}) {
   const { t } = useLanguage();
+  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecruiters = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("visibility", "PUBLISHED");
+        if (isLeadPartner !== undefined) {
+          params.append("isLeadPartner", String(isLeadPartner));
+        }
+
+        const response = await get(`/recruiters?${params.toString()}`);
+        let data = Array.isArray(response) ? response : [];
+        
+        if (limit) {
+          data = data.slice(0, limit);
+        }
+        
+        setRecruiters(data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch recruiters:", err);
+        setError(err instanceof Error ? err.message : "Failed to load recruiters");
+        setRecruiters([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecruiters();
+  }, [isLeadPartner, limit]);
 
   if (loading) {
     return (
@@ -152,20 +194,10 @@ export default function RecruiterList() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mb-10">
-        <h2 className="text-3xl font-extrabold tracking-tight text-primary-text dark:text-zinc-50 sm:text-4xl">
-          {t("recruiters.title")}
-        </h2>
-        <p className="mt-2 text-base text-zinc-500 dark:text-zinc-400">
-          {t("recruiters.subtitle")}
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {recruiters.map((recruiter, index) => (
-          <RecruiterCard key={recruiter.id} recruiter={recruiter} index={index} />
-        ))}
-      </div>
-    </section>
+    <div className={`grid grid-cols-1 gap-6 sm:grid-cols-3 ${columns}`}>
+      {recruiters.map((recruiter, index) => (
+        <RecruiterCard key={recruiter.id} recruiter={recruiter} index={index} />
+      ))}
+    </div>
   );
 }

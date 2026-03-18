@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Facebook, Linkedin, Instagram } from "lucide-react";
-import { useLanguage } from "@/providers/language-provider";
 
 const socialLinks = [
   { icon: Facebook, href: "https://www.facebook.com/lambda.global.official", label: "Facebook" },
@@ -12,21 +11,17 @@ const socialLinks = [
 ];
 
 export default function Footer() {
-  const { t } = useLanguage();
-
   const footerLinks = [
-    { label: t("footer.home"), href: "/" },
-    { label: t("footer.about"), href: "https://lambda.global/about#ourapproach" },
-    { label: t("footer.features"), href: "/features" },
-    { label: t("footer.pricing"), href: "/pricing" },
-    { label: t("footer.contact"), href: "/contact" },
-    { label: t("footer.reviews"), href: "/reviews" },
+    { label: "Find Recruiters", href: "/recruiters" },
+    { label: "Browse Projects", href: "/projects" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Dashboard", href: "/dashboard" },
   ];
 
   return (
-    <footer className="w-full bg-white dark:bg-black">
+    <footer className="w-full border-t border-slate-200 bg-slate-50/70">
       <div className="mx-auto w-full max-w-7xl px-4 pt-10 pb-6 sm:px-6 md:pt-12 md:pb-8 lg:px-8">
-      {/* Top row: Logo + Nav links */}
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/image/lambda.png" alt="Lambda logo" width={100} height={32} priority />
@@ -36,7 +31,7 @@ export default function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-primary-text transition-colors hover:text-primary-text/80 dark:text-zinc-400 dark:hover:text-zinc-50"
+               className="text-sm font-medium text-primary-text transition-colors hover:text-primary-text/80 dark:text-zinc-400 dark:hover:text-zinc-50"
             >
               {link.label}
             </Link>
@@ -44,20 +39,18 @@ export default function Footer() {
         </nav>
       </div>
 
-      {/* Middle: Contact info + Social icons */}
       <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
-        {/* Contact info */}
-        <div className="flex flex-col gap-5 text-sm font-bold text-primary-text dark:text-zinc-100">
-          <p>+976 8888 8003</p>
-          <p>hello@lambda.global</p>
+        <div className="max-w-xl space-y-2 text-sm text-slate-600">
+          <p className="text-base font-semibold text-slate-900">Hire the recruiter. Not the agency.</p>
           <p>
-            360 Mandala Residential Tower, Ikh Khuree St,
-            <br />
-            Ulaanbaatar 13312, Mongolia
+            Headhunters connects companies directly with elite independent recruiters.
+            No retainers. No middlemen. Just measurable hiring outcomes.
+          </p>
+          <p>
+            hello@lambda.global · +976 8888 8003
           </p>
         </div>
 
-        {/* Social icons */}
         <div className="flex items-center gap-4">
           {socialLinks.map((social) => (
             <a
@@ -66,26 +59,24 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-primary-text transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 md:h-20 md:w-20"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 md:h-16 md:w-16"
             >
-              <social.icon className="h-5 w-5 md:h-7 md:w-7" />
+              <social.icon className="h-5 w-5" />
             </a>
           ))}
         </div>
       </div>
 
-      {/* Divider */}
-      <hr className="mt-10 border-zinc-200 dark:border-zinc-800" />
+      <hr className="mt-10 border-slate-200" />
 
-      {/* Bottom row: Copyright + Legal links */}
-      <div className="mt-6 flex flex-col items-start justify-between gap-4 text-sm text-zinc-500 dark:text-zinc-400 md:flex-row md:items-center">
-        <p>{t("footer.copyright")}</p>
+      <div className="mt-6 flex flex-col items-start justify-between gap-4 text-sm text-slate-500 md:flex-row md:items-center">
+        <p>© 2026 Huntly by Lambda. All rights reserved.</p>
         <div className="flex items-center gap-6">
-          <Link href="/privacy" className="transition-colors hover:text-primary-text/80 dark:hover:text-zinc-50">
-            {t("footer.privacy")}
+          <Link href="/privacy" className="transition-colors hover:text-slate-900">
+            Privacy Policy
           </Link>
-          <Link href="/terms" className="transition-colors hover:text-primary-text/80 dark:hover:text-zinc-50">
-            {t("footer.terms")}
+          <Link href="/terms" className="transition-colors hover:text-slate-900">
+            Terms of Service
           </Link>
         </div>
       </div>
