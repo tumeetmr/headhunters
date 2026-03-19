@@ -1,20 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { Suspense, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { MapPin, Search, Star, ChevronRight, X } from "lucide-react";
+import { MapPin, Search, Star, ChevronRight, X, Filter } from "lucide-react";
 import { useRecruiter } from "@/hooks/useRecruiter";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import Image from "next/image";
 
-export default function RecruitersPage() {
+function RecruitersPageContent() {
   const searchParams = useSearchParams();
   const { recruiters, loading, error } = useRecruiter();
   const [query, setQuery] = useState(searchParams.get("search") || "");
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedQuickFilters, setSelectedQuickFilters] = useState<string[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<string[]>([]);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
@@ -70,6 +72,8 @@ export default function RecruitersPage() {
       results = results.filter((recruiter) => {
         const searchText = [
           recruiter.slug,
+          recruiter.user?.name,
+          recruiter.user?.username,
           recruiter.title,
           recruiter.tagline,
           recruiter.location,
@@ -158,17 +162,37 @@ export default function RecruitersPage() {
     (ratingMin > 0 || ratingMax < 5 ? 1 : 0);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950">Browse Recruiters</h1>
-          <p className="mt-2 text-slate-600">Search-first discovery with trust signals, ratings, and proven placement history.</p>
-        </div>
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* HEADER */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-black tracking-tight text-slate-950">Browse Recruiters</h1>
+        <p className="mt-2 text-sm text-slate-600">Find and connect with top recruiters</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        {/* MOBILE FILTER TOGGLE */}
+        <div className="lg:hidden mb-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <Filter className="size-4" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+            {activeFilterCount > 0 && (
+              <span className="ml-auto rounded-full bg-slate-900 text-white text-xs px-2 py-0.5">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* LEFT SIDEBAR - FILTERS */}
-        <div className="space-y-6 sticky top-0 max-h-screen overflow-y-auto">
+        <div
+          className={`space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto
+            ${showFilters ? "block" : "hidden lg:block"}
+            pb-6 lg:pb-0
+          `}
+        >
           {/* SEARCH HEADING */}
           <div>
             <h2 className="text-2xl font-bold text-slate-950">Search</h2>
@@ -179,21 +203,22 @@ export default function RecruitersPage() {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-12 border-2 border-slate-300 bg-white px-4 rounded-lg text-base placeholder:text-slate-400"
-              placeholder="Search by name or specialty"
+              className="h-11 border-2 border-slate-200 bg-white px-4 rounded-lg text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
+              placeholder="Search by name..."
             />
+            <Search className="absolute right-3 top-3 size-5 text-slate-400 pointer-events-none" />
           </div>
 
           {/* RECOMMENDED FOR YOU */}
-          <button className="w-full flex items-center gap-4 rounded-lg border border-slate-300 bg-white px-3 py-2 text-left hover:bg-slate-50 transition-colors">
-            <div className="flex size-10 items-center justify-center rounded-full bg-slate-900 shrink-0">
-              <span className="text-white font-semibold text-sm">AI</span>
+          <button className="w-full flex items-center gap-3 rounded-lg border border-slate-300 bg-linear-to-r from-slate-50 to-slate-100 px-3 py-3 text-left hover:bg-slate-100 transition-colors">
+            <div className="flex size-9 items-center justify-center rounded-full bg-slate-900 shrink-0">
+              <span className="text-white font-bold text-xs">AI</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900">Recommended for me</p>
-              <p className="text-xs text-slate-600">Get personalized recommendations</p>
+              <p className="text-sm font-semibold text-slate-900">AI Recommendations</p>
+              <p className="text-xs text-slate-500">Personalized matches</p>
             </div>
-            <ChevronRight className="size-5 text-slate-400 shrink-0" />
+            <ChevronRight className="size-4 text-slate-400 shrink-0" />
           </button>
 
           {/* CLEAR FILTERS */}
@@ -203,39 +228,45 @@ export default function RecruitersPage() {
               className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <X className="size-4" />
-              Clear Filters ({activeFilterCount})
+              Clear All
             </button>
           )}
 
+          {/* DIVIDER */}
+          <div className="border-t border-slate-200"></div>
+
           {/* QUICK FILTERS */}
-          <div className="flex flex-wrap gap-2">
-            {quickFilters.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => toggleQuickFilter(filter)}
-                className={`px-2 py-0.5 rounded-sm border text-sm font-medium transition-colors ${
-                  selectedQuickFilters.includes(filter)
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Quick Filters</h3>
+            <div className="flex flex-wrap gap-2">
+              {quickFilters.map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => toggleQuickFilter(filter)}
+                  className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                    selectedQuickFilters.includes(filter)
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* LEVEL SECTION */}
           <div className="space-y-3">
-            <h3 className="text-lg font-bold text-slate-950">Level</h3>
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Level</h3>
             <div className="flex flex-wrap gap-2">
               {levels.map((level) => (
                 <button
                   key={level}
                   onClick={() => toggleLevel(level)}
-                  className={`px-2 py-0.5 rounded-sm border text-sm transition-colors ${
+                  className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
                     selectedLevel.includes(level)
                       ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                   }`}
                 >
                   {level}
@@ -246,35 +277,32 @@ export default function RecruitersPage() {
 
           {/* INDUSTRY SECTION */}
           <div className="space-y-3">
-            <h3 className="text-lg font-bold text-slate-950">Industry</h3>
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Industry</h3>
             <div className="flex flex-wrap gap-2">
               {industries.map((industry) => (
                 <button
                   key={industry}
                   onClick={() => toggleIndustry(industry)}
-                  className={`px-2 py-0.5 rounded-sm border text-sm transition-colors ${
+                  className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
                     selectedIndustries.includes(industry)
                       ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                   }`}
                 >
                   {industry}
                 </button>
               ))}
-              <button className="px-2 py-0.5 rounded-sm border text-sm font-medium transition-colors border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                More
-              </button>
             </div>
           </div>
 
           {/* RATING SECTION */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-slate-950">Rating Range</h3>
-            <div className="flex gap-3">
-              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-sm font-semibold min-w-fit">
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Rating</h3>
+            <div className="flex gap-2">
+              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold min-w-fit">
                 {ratingMin.toFixed(1)}★
               </div>
-              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-sm font-semibold min-w-fit">
+              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold min-w-fit">
                 {ratingMax.toFixed(1)}★
               </div>
             </div>
@@ -288,7 +316,7 @@ export default function RecruitersPage() {
               step={0.1}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-slate-600">
+            <div className="flex justify-between text-xs text-slate-500">
               <span>0★</span>
               <span>5★</span>
             </div>
@@ -296,7 +324,7 @@ export default function RecruitersPage() {
 
           {/* SORT OPTIONS */}
           <div className="space-y-3 border-t border-slate-200 pt-6">
-            <h3 className="text-lg font-bold text-slate-950">Sort By</h3>
+            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Sort</h3>
             <div className="space-y-2">
               {sortOptions.map((option) => (
                 <label key={option.id} className="flex items-center gap-3 cursor-pointer">
@@ -306,7 +334,7 @@ export default function RecruitersPage() {
                     value={option.id}
                     checked={sortOption === option.id}
                     onChange={() => setSortOption(option.id)}
-                    className="size-4"
+                    className="size-4 accent-slate-900"
                   />
                   <span className="text-sm text-slate-700">{option.label}</span>
                 </label>
@@ -316,12 +344,25 @@ export default function RecruitersPage() {
         </div>
 
         {/* RIGHT SIDE - RESULTS */}
-        <div className="space-y-4">
-          {/* RESULT COUNT */}
+        <div className="space-y-8">
+          {/* RESULT COUNT & SORT ON MOBILE */}
           {!loading && !error && (
-            <div className="text-sm text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filtered.length}</span> of{" "}
-              <span className="font-semibold text-slate-900">{recruiters.length}</span> recruiters
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">{filtered.length}</span> of{" "}
+                <span className="font-semibold text-slate-900">{recruiters.length}</span>
+              </div>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="lg:hidden px-3 py-1.5 text-xs border border-slate-200 rounded-md bg-white text-slate-700"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -352,20 +393,19 @@ export default function RecruitersPage() {
 
           {/* EMPTY STATE */}
           {!loading && !error && filtered.length === 0 && (
-            <Card className="border-slate-200 bg-slate-50">
-              <CardContent className="pt-12 text-center pb-12">
-                <div className="text-slate-400 mb-3">
+            <Card className="border-slate-200 bg-white">
+              <CardContent className="pt-16 pb-16 text-center">
+                <div className="text-slate-300 mb-4">
                   <Search className="size-12 mx-auto" />
                 </div>
-                <p className="text-base font-semibold text-slate-900 mb-1">No recruiters found</p>
-                <p className="text-sm text-slate-600">
-                  Try adjusting your filters or search terms to find what you're looking for.
+                <p className="text-lg font-semibold text-slate-900 mb-2">No recruiters found</p>
+                <p className="text-sm text-slate-600 mb-6">
+                  Try adjusting your filters or search terms.
                 </p>
                 {activeFilterCount > 0 && (
                   <Button
-                    variant="outline"
-                    className="mt-4"
                     onClick={clearAllFilters}
+                    className="bg-slate-900 hover:bg-slate-800 text-white"
                   >
                     Clear Filters
                   </Button>
@@ -376,59 +416,108 @@ export default function RecruitersPage() {
 
           {/* RESULTS */}
           {!loading && !error && filtered.length > 0 && (
-            filtered.map((recruiter) => {
-              const skillTags = recruiter.tags
-                .filter((item) => item.skill.type === "SKILL" || item.skill.type === "EXPERTISE")
-                .slice(0, 4);
+            <div className="space-y-4">
+              {filtered.map((recruiter) => {
+                const skillTags = recruiter.tags
+                  .filter((item) => item.skill.type === "SKILL" || item.skill.type === "EXPERTISE")
+                  .slice(0, 3);
 
-              return (
-                <Card key={recruiter.id} className="border-slate-200 bg-white hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-semibold text-slate-950">{recruiter.slug.replaceAll("-", " ")}</p>
-                        <p className="text-sm text-slate-600">{recruiter.title}</p>
-                        <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
-                          <MapPin className="size-4" />
-                          {recruiter.location || "Remote"} · {recruiter.timezone || "GMT+8"}
-                        </p>
+                return (
+                  <Link key={recruiter.id} href={`/recruiters/${recruiter.slug}`} className="block">
+                    <Card className="border-slate-200 bg-white hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden">
+                      <CardContent className="p-0">
+                      <div className="flex min-h-35">
+                        {/* IMAGE */}
+                        <div className="relative w-28 sm:w-36 shrink-0 bg-slate-200">
+                          {recruiter.photoUrl ? (
+                            <Image
+                              src={recruiter.photoUrl}
+                              alt={recruiter.slug}
+                              fill
+                              sizes="(max-width: 640px) 112px, 144px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center px-2">
+                              <span className="text-slate-400 text-xs font-medium text-center">No photo</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* CONTENT */}
+                        <div className="flex-1 min-w-0 p-4 sm:p-6">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <p className="text-base sm:text-lg font-bold text-slate-950">
+                              {recruiter.user.name}
+                            </p>
+                            {recruiter.isLeadPartner && (
+                              <Badge className="bg-blue-100 text-blue-700 text-xs shrink-0">✓ Verified</Badge>
+                            )}
+                          </div>
+
+                          {recruiter.title && (
+                            <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">{recruiter.title}</p>
+                          )}
+
+                          {recruiter.tagline && (
+                            <p className="text-xs sm:text-sm text-slate-700 mt-2 line-clamp-2">{recruiter.tagline}</p>
+                          )}
+
+                          {/* STATS */}
+                          <div className="mt-3 flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+                            <span className="inline-flex items-center gap-1 font-medium">
+                              <Star className="size-4 fill-amber-400 text-amber-400" />
+                              {recruiter.rating > 0 ? recruiter.rating.toFixed(1) : "N/A"}
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="text-slate-600">{Math.max(1, recruiter.yearsExperience ?? 0)}+ yrs</span>
+                          </div>
+
+                          {/* SKILLS */}
+                          {skillTags.length > 0 && (
+                            <div className="mt-3 flex gap-1 flex-wrap">
+                              {skillTags.map((tag, idx) => (
+                                <Badge key={idx} className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5">
+                                  {tag.skill.value}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <Button asChild>
-                        <Link href={`/recruiters/${recruiter.slug}`}>View Profile</Link>
-                      </Button>
-                    </div>
-
-                    {recruiter.tagline && <p className="mt-3 text-sm text-slate-700">&quot;{recruiter.tagline}&quot;</p>}
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {skillTags.map((tag) => (
-                        <Badge key={tag.id} variant="outline" className="border-slate-200 bg-white text-slate-700">
-                          {tag.skill.value}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                      <span className="inline-flex items-center gap-1">
-                        <Star className="size-4 fill-amber-400 text-amber-400" />
-                        {recruiter.rating > 0 ? recruiter.rating.toFixed(1) : "N/A"} ({Math.max(5, skillTags.length * 2)} reviews)
-                      </span>
-                      <span>·</span>
-                      <span>{Math.max(1, recruiter.yearsExperience ?? 0)}+ years</span>
-                      {recruiter.isLeadPartner && (
-                        <>
-                          <span>·</span>
-                          <Badge variant="success" className="bg-blue-100 text-blue-700">Verified</Badge>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
-            })
+            })}
+            </div>
           )}
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RecruitersPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-slate-200 bg-white animate-pulse">
+                <CardContent className="pt-6">
+                  <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/4 mb-3"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </main>
+      }
+    >
+      <RecruitersPageContent />
+    </Suspense>
   );
 }

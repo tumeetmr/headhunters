@@ -2,14 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { User, LogOut } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
-  const { data: session } = useSession();
-  const isLoggedIn = !!session;
-
   const navLinks = [
     { label: "Recruiters", href: "/recruiters" },
     { label: "Jobs", href: "/jobs" },
@@ -38,39 +33,10 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard">Dashboard</Link>
+        <div className="hidden items-center md:flex">
+          <Button size="sm" asChild>
+            <Link href="/register">Join Us</Link>
           </Button>
-          {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard/profile"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition-colors hover:bg-slate-100"
-                aria-label="Profile"
-                title="Profile"
-              >
-                <User className="h-5 w-5" />
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-rose-500 transition-colors hover:bg-rose-50"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/register">Join as Recruiter</Link>
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -81,14 +47,9 @@ export default function Navbar() {
               <Link href={link.href}>{link.label}</Link>
             </Button>
           ))}
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard">Dashboard</Link>
+          <Button size="sm" asChild>
+            <Link href="/register">Join Us</Link>
           </Button>
-          {!isLoggedIn && (
-            <Button size="sm" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-          )}
         </div>
       </div>
     </nav>

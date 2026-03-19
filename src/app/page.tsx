@@ -124,7 +124,7 @@ export default function Home() {
               <Link href="/recruiters">View all</Link>
             </Button>
           </div>
-          <RecruiterList isLeadPartner={true} limit={3} columns="sm:grid-cols-2" />
+          <RecruiterList isLeadPartner={true} limit={5} columns="sm:grid-cols-2" />
         </section>
 
         <section className="py-16 sm:py-20">
@@ -150,7 +150,7 @@ export default function Home() {
         <InsightsSection />
 
         <section className="py-16 sm:py-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-950">What customers say</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-950">What companies say</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
             <Card className="border-slate-200 bg-white">
               <CardContent className="p-6">

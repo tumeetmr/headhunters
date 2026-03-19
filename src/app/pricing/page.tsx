@@ -1,11 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, Minus } from 'lucide-react';
 import { get } from "@/lib/api";
+
+interface CompanyPlanFeatures {
+  max_active_projects: number;
+  max_proposals_viewable: number;
+  can_direct_message: boolean;
+  can_shortlist: boolean;
+  can_post_recruit_request: boolean;
+  featured_projects: number;
+  dedicated_account_manager: boolean;
+  analytics_access: boolean;
+}
 
 interface SubscriptionPlan {
   id: string;
@@ -14,14 +22,120 @@ interface SubscriptionPlan {
   price: number | string;
   currency: string;
   interval: string;
-  features?: Record<string, any>;
+  features?: CompanyPlanFeatures;
   isActive: boolean;
+}
+
+type FeatureKey = keyof CompanyPlanFeatures;
+
+type FeatureRow = {
+  key: FeatureKey;
+  label: string;
+  helper: string;
+  type: 'limit' | 'boolean' | 'count';
+};
+
+const featureRows: FeatureRow[] = [
+  {
+    key: 'max_active_projects',
+    label: 'Active Projects',
+    helper: 'How many projects you can run at the same time',
+    type: 'limit',
+  },
+  {
+    key: 'max_proposals_viewable',
+    label: 'Viewable Proposals',
+    helper: 'How many proposals you can unlock and review',
+    type: 'limit',
+  },
+  {
+    key: 'can_direct_message',
+    label: 'Direct Messaging',
+    helper: 'Message recruiters instantly from the platform',
+    type: 'boolean',
+  },
+  {
+    key: 'can_shortlist',
+    label: 'Shortlisting',
+    helper: 'Save and organize top recruiter candidates',
+    type: 'boolean',
+  },
+  {
+    key: 'can_post_recruit_request',
+    label: 'Post Recruit Requests',
+    helper: 'Create open hiring requests for recruiters',
+    type: 'boolean',
+  },
+  {
+    key: 'featured_projects',
+    label: 'Featured Projects',
+    helper: 'Projects promoted with higher visibility',
+    type: 'count',
+  },
+  {
+    key: 'dedicated_account_manager',
+    label: 'Dedicated Account Manager',
+    helper: 'Priority guidance for hiring strategy and support',
+    type: 'boolean',
+  },
+  {
+    key: 'analytics_access',
+    label: 'Analytics Access',
+    helper: 'Hiring funnel and performance insights',
+    type: 'boolean',
+  },
+];
+
+const defaultFeatures: CompanyPlanFeatures = {
+  max_active_projects: 0,
+  max_proposals_viewable: 0,
+  can_direct_message: false,
+  can_shortlist: false,
+  can_post_recruit_request: false,
+  featured_projects: 0,
+  dedicated_account_manager: false,
+  analytics_access: false,
+};
+
+function formatCurrency(currency: string, price: number | string) {
+  const numericPrice = typeof price === 'string' ? Number(price) : price;
+  const safePrice = Number.isFinite(numericPrice) ? numericPrice : 0;
+
+  if (currency === 'MNT') {
+    return `${new Intl.NumberFormat('en-US').format(safePrice)} MNT`;
+  }
+
+  return `${new Intl.NumberFormat('en-US').format(safePrice)} ${currency}`;
+}
+
+function formatFeatureValue(value: number | boolean, type: FeatureRow['type']) {
+  if (type === 'boolean') {
+    const enabled = Boolean(value);
+    return enabled ? (
+      <span className="inline-flex items-center gap-1.5 text-emerald-600">
+        <Check className="h-4 w-4" />
+        Yes
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1.5 text-slate-400">
+        <Minus className="h-4 w-4" />
+        No
+      </span>
+    );
+  }
+
+  if (type === 'limit') {
+    return value === -1 ? 'Unlimited' : String(value);
+  }
+
+  return String(value);
 }
 
 export default function PricingPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -39,46 +153,28 @@ export default function PricingPage() {
     fetchPlans();
   }, []);
 
-  const planFeatures: Record<string, string[]> = {
-    'Starter': [
-      'Basic profile visibility',
-      'Up to 5 proposals per month',
-      'Up to 2 active contracts',
-      'Platform fee: 15%',
-    ],
-    'Pro': [
-      'Full profile + Pro badge',
-      'Unlimited proposals',
-      'Up to 10 active contracts',
-      'Platform fee: 10%',
-      'Advanced analytics',
-    ],
-    'Elite': [
-      'Featured profile listing',
-      'Unlimited proposals',
-      'Unlimited active contracts',
-      'Platform fee: 6%',
-      'Advanced analytics + priority support',
-    ],
-  };
-
-  // Sort plans: middle one is featured
-  const sortedPlans = plans.sort((a, b) => {
+  const sortedPlans = [...plans]
+    .filter((plan) => plan.isActive)
+    .sort((a, b) => {
     const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
     const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
     return priceA - priceB;
   });
 
-  const enhancedPlans = sortedPlans.map((plan, index) => ({
-    ...plan,
-    featured: index === 1 && sortedPlans.length === 3,
-    badge: index === 1 && sortedPlans.length === 3 ? 'Average' : undefined,
-  }));
+  const featuredPlanId =
+    sortedPlans.find((plan) => plan.name.toUpperCase() === 'PROFESSIONAL')?.id ??
+    sortedPlans[Math.floor(sortedPlans.length / 2)]?.id;
+
+  const hasActivePlans = sortedPlans.length > 0;
+  const comparisonGridColumns = {
+    gridTemplateColumns: `repeat(${sortedPlans.length}, minmax(240px, 1fr))`,
+  };
+  const activeSelectedPlanId = selectedPlanId ?? featuredPlanId;
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center min-h-96">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex min-h-96 items-center justify-center rounded-2xl border border-slate-200 bg-white">
           <div className="text-slate-600">Loading pricing plans...</div>
         </div>
       </main>
@@ -87,8 +183,8 @@ export default function PricingPage() {
 
   if (error) {
     return (
-      <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center min-h-96">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex min-h-96 items-center justify-center rounded-2xl border border-red-200 bg-red-50">
           <div className="text-red-600">{error}</div>
         </div>
       </main>
@@ -96,95 +192,96 @@ export default function PricingPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mb-16 text-center">
-        <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Our pricing plan</h1>
-        <p className="mt-4 text-lg text-slate-600">Explore our flexible plans and get started today!</p>
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6 text-center sm:mb-8">
+        <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          Compare Plans
+        </h1>
+        <p className="mt-3 text-sm text-slate-600 sm:text-lg">
+          Pick the plan that matches your hiring pace and collaboration needs.
+        </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
-        {enhancedPlans.map((plan) => (
-          <Card
-            key={plan.id}
-            className={`relative transition-all duration-300 ${
-              plan.featured
-                ? "border-slate-700 bg-slate-800 text-white shadow-xl md:scale-105"
-                : "border-slate-200 bg-white"
-            }`}
-          >
-            {plan.badge && (
-              <div className="absolute -top-4 right-8">
-                <Badge className="bg-emerald-400 text-slate-900 font-semibold px-4 py-1.5 text-sm rounded-full">
-                  {plan.badge}
-                </Badge>
-              </div>
-            )}
+      {!hasActivePlans ? (
+        <div className="flex min-h-72 items-center justify-center rounded-3xl border border-slate-200 bg-white text-slate-600 shadow-sm">
+          No active plans available right now.
+        </div>
+      ) : (
+        <div className="no-scrollbar overflow-x-auto pb-2">
+          <div className="min-w-max" style={comparisonGridColumns}>
+            <div className="grid gap-3" style={comparisonGridColumns}>
+              {sortedPlans.map((plan) => {
+                const planFeatures = plan.features ?? defaultFeatures;
+                const isFeatured = plan.id === featuredPlanId;
+                const isSelected = plan.id === activeSelectedPlanId;
 
-            <CardHeader className="pb-4">
-              <CardTitle className={plan.featured ? "text-white" : "text-slate-950"}>
-                {plan.name}
-              </CardTitle>
-              <p className={`mt-2 text-sm ${plan.featured ? "text-slate-300" : "text-slate-600"}`}>
-                {plan.description || 'Flexible subscription plan'}
-              </p>
-              <div className="mt-6 flex items-baseline gap-2">
-                <span className={`text-4xl font-black ${plan.featured ? "text-white" : "text-slate-950"}`}>
-                  ₮{plan.price}
-                </span>
-                <span className={`text-sm ${plan.featured ? "text-slate-400" : "text-slate-600"}`}>
-                  / {plan.interval.toLowerCase()}
-                </span>
-              </div>
-            </CardHeader>
+                return (
+                  <article
+                    key={plan.id}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedPlanId(plan.id);
+                      }
+                    }}
+                    aria-pressed={isSelected}
+                    className={`rounded-2xl border bg-white p-4 shadow-sm transition-all duration-300 ${
+                      isSelected
+                        ? 'border-emerald-400 shadow-emerald-100/70 ring-2 ring-emerald-200'
+                        : isFeatured
+                          ? 'border-emerald-300 shadow-emerald-100/70'
+                          : 'border-slate-200 hover:-translate-y-0.5 hover:shadow-md'
+                    }`}
+                  >
+                    <p className="text-lg font-black text-slate-950">{plan.name}</p>
+                    <p className="mt-1 min-h-8 text-xs text-slate-500">
+                      {plan.description || 'Flexible subscription plan'}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-slate-900">
+                      {formatCurrency(plan.currency, plan.price)}
+                      <span className="ml-1 text-xs font-medium text-slate-500">
+                        / {plan.interval.toLowerCase()}
+                      </span>
+                    </p>
 
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                {(planFeatures[plan.name] || []).map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Check
-                      className={`mt-0.5 h-5 w-5 shrink-0 ${
-                        plan.featured ? "text-emerald-400" : "text-emerald-500"
-                      }`}
-                    />
-                    <span className={`text-sm ${plan.featured ? "text-slate-200" : "text-slate-700"}`}>
-                      {feature}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                    {isFeatured ? (
+                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        Most popular
+                      </span>
+                    ) : null}
 
-              <Button
-                className={`w-full py-6 text-base font-semibold transition-all gap-2 rounded-lg ${
-                  plan.featured
-                    ? "bg-white text-slate-900 hover:bg-slate-50"
-                    : "bg-slate-900 text-white hover:bg-slate-800"
-                }`}
-              >
-                Try for free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                    <div className="mt-2 text-[11px] font-medium text-slate-500">
+                      {isSelected ? 'Selected plan' : 'Click to select'}
+                    </div>
 
-      <div className="mt-16 rounded-lg border border-slate-200 bg-slate-50 p-8">
-        <h3 className="text-lg font-bold text-slate-950">What's included in every plan?</h3>
-        <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-          {[
-            "Direct access to companies",
-            "No middlemen or retainer fees",
-            "Real-time notifications",
-            "Contract management tools",
-            "Payment processing",
-            "24/7 support",
-          ].map((item, index) => (
-            <li key={index} className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-emerald-500" />
-              <span className="text-slate-700">{item}</span>
-            </li>
-          ))}
-        </ul>
+                    <div className="mt-4 space-y-0">
+                      {featureRows.map((feature) => {
+                        const value = planFeatures[feature.key];
+
+                        return (
+                          <div
+                            key={`${plan.id}-${feature.key}`}
+                            className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 text-xs font-medium text-slate-800 last:border-b-0"
+                          >
+                            <span className="text-slate-600">{feature.label}</span>
+                            <span className="shrink-0">{formatFeatureValue(value, feature.type)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 sm:text-sm">
+        Notes: values shown as <span className="font-semibold">Unlimited</span> mean there is no cap.
       </div>
     </main>
   );

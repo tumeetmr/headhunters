@@ -7,8 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/providers/language-provider";
 
-type LoginRole = "RECRUITER" | "COMPANY";
-
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -16,7 +14,6 @@ export default function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const { t } = useLanguage();
 
-  const [role, setRole] = useState<LoginRole>("RECRUITER");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +34,6 @@ export default function LoginForm() {
     const result = await signIn("credentials", {
       email: normalizedEmail,
       password,
-      role,
       redirect: false,
       callbackUrl,
     });
@@ -72,32 +68,6 @@ export default function LoginForm() {
       <h1 className="mb-6 text-[1.75rem] font-bold leading-tight tracking-tight text-primary-text">
         {t("login.title")}
       </h1>
-
-      {/* Role toggle */}
-      <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
-        <button
-          type="button"
-          onClick={() => setRole("RECRUITER")}
-          className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-            role === "RECRUITER"
-              ? "bg-white text-primary-text shadow-sm"
-              : "text-zinc-500 hover:text-primary-text"
-          }`}
-        >
-          {t("login.recruiter")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setRole("COMPANY")}
-          className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-            role === "COMPANY"
-              ? "bg-white text-primary-text shadow-sm"
-              : "text-zinc-500 hover:text-primary-text"
-          }`}
-        >
-          {t("login.company")}
-        </button>
-      </div>
 
       <form onSubmit={handlePasswordSignIn}>
         {/* Email */}

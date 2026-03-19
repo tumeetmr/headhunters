@@ -324,7 +324,7 @@ const translations = {
     "register.submitting": "Бүртгүүлж байна...",
     "register.errorPasswordMatch": "Нууц үгнүүд таарчвалгүй байна.",
     "register.errorGeneral": "Бүртгүүлэлт амжиллээгүй. Дахин оролдоно уу.",
-    "register.haveAccount": "Аль бүртгүүлсэн үү?",
+    "register.haveAccount": "Бүртгэлтэй юу?",
     "register.signIn": "Нэвтрэх",
     "register.personalInfo": "Хувийн мэдээлэл",
     "register.companyDetails": "Компанийн дэлгэрэнгүй",

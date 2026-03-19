@@ -24,12 +24,10 @@ export const authOptions: AuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         const email = String(credentials?.email ?? "").trim();
         const password = String(credentials?.password ?? "");
-        const selectedRole = String(credentials?.role ?? "RECRUITER").toUpperCase();
 
         if (!email || !password) {
           return null;
@@ -53,10 +51,6 @@ export const authOptions: AuthOptions = {
         const data = (await response.json()) as LoginResponse;
 
         if (!data?.accessToken || !data?.user?.id || !data?.user?.email || !data?.user?.role) {
-          return null;
-        }
-
-        if (data.user.role.toUpperCase() !== selectedRole) {
           return null;
         }
 

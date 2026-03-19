@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 export type TalentStepItem = {
   title: string;
   time?: string;
@@ -22,8 +24,8 @@ export default function TalentSteps({
     <div className={className}>
       <div className="relative mx-auto max-w-5xl">
         <div
-          className="grid grid-cols-1 gap-10 sm:gap-0"
-          style={{ gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(0, 1fr))` }}
+          className="grid grid-cols-1 gap-10 sm:grid-cols-[repeat(var(--steps),minmax(0,1fr))] sm:gap-0"
+          style={{ "--steps": Math.max(items.length, 1) } as CSSProperties}
         >
           {items.map((step, i) => (
             <div key={`${step.title}-${i}`} className="relative flex flex-col items-center text-center">

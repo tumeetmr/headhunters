@@ -3,6 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { get } from "@/lib/api";
 
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  username?: string | null;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RecruiterSkill {
   id: string;
   type: string;
@@ -73,6 +83,7 @@ export interface Recruiter {
   links: RecruiterLink[];
   activeSearches: unknown[];
   insights: RecruiterInsight[];
+  user: User;
 }
 
 interface UseRecruiterReturn {

@@ -1,5 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/dist/client/link";
 
 const companySteps = [
   ["Step 1 - Post a Project", "Tell us about the role, budget, and what success looks like. It is free to post."],
@@ -28,23 +30,6 @@ export default function HowItWorksPage() {
         </TabsList>
 
         <TabsContent value="company" className="mt-4">
-          {/* Banner Section */}
-          <div
-            className="mb-12 rounded-3xl px-8 py-12 sm:px-12 sm:py-16"
-            style={{
-              background: "linear-gradient(176.74deg, #1F2937 -13.59%, #637381 109.86%)",
-            }}
-          >
-            <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-              If you wanna hire exceptional talents
-            </h2>
-            <p className="mt-4 text-lg text-slate-200">
-              Access a curated network of top recruiters ready to deliver results.
-            </p>
-            <button className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-100">
-              Join Us
-            </button>
-          </div>
           <div className="mt-12 space-y-12">
             {companySteps.map(([title, desc], index) => (
               <div
@@ -62,26 +47,26 @@ export default function HowItWorksPage() {
               </div>
             ))}
           </div>
-        </TabsContent>
-
-        <TabsContent value="recruiter" className="mt-4">
           {/* Banner Section */}
           <div
-            className="mb-12 rounded-3xl px-8 py-12 sm:px-12 sm:py-16"
+            className="mt-12 rounded-3xl px-8 py-12 sm:px-12 sm:py-16"
             style={{
               background: "linear-gradient(176.74deg, #1F2937 -13.59%, #637381 109.86%)",
             }}
           >
             <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-              If you wanna grow your recruiting business
+              If you wanna hire exceptional talents
             </h2>
             <p className="mt-4 text-lg text-slate-200">
-              Access a marketplace of companies actively hiring top talent.
+              Access a curated network of top recruiters ready to deliver results.
             </p>
-            <button className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-100">
-              Join Us
-            </button>
+            <Button size="lg" className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-slate-700 hover:bg-slate-100" asChild>
+              <Link href="/register">Join Us</Link>
+            </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="recruiter" className="mt-4">
           <div className="mt-12 space-y-12">
             {recruiterSteps.map(([title, desc], index) => (
               <div
@@ -98,6 +83,23 @@ export default function HowItWorksPage() {
                 </div>
               </div>
             ))}
+          </div>
+          {/* Banner Section */}
+          <div
+            className="mt-12 rounded-3xl px-8 py-12 sm:px-12 sm:py-16"
+            style={{
+              background: "linear-gradient(176.74deg, #1F2937 -13.59%, #637381 109.86%)",
+            }}
+          >
+            <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+              If you wanna grow your recruiting business
+            </h2>
+            <p className="mt-4 text-lg text-slate-200">
+              Access a marketplace of companies actively hiring top talent.
+            </p>
+            <Button size="lg" className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-slate-700 hover:bg-slate-100" asChild>
+              <Link href="/register">Join Us</Link>
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
