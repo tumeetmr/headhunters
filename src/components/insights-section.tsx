@@ -15,6 +15,13 @@ interface InsightData {
   label: string;
 }
 
+interface RecruiterInsightSource {
+  rating?: number;
+  location?: string | null;
+  tags?: Array<{ skill?: { value?: string } }>;
+  activeSearches?: unknown[];
+}
+
 const iconMap = {
   star: Star,
   clipboard: ClipboardCheck,
@@ -25,14 +32,88 @@ const iconMap = {
 export default function InsightsSection() {
   const [insights, setInsights] = useState<InsightData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const response = await get('/recruiters/insights');
-        const data = (response as any)?.data || response;
-        setInsights(Array.isArray(data) ? data : []);
+        const recruiters = await get<RecruiterInsightSource[]>('/recruiters?visibility=PUBLISHED');
+        const publishedRecruiters = Array.isArray(recruiters) ? recruiters : [];
+
+        if (publishedRecruiters.length === 0) {
+          setInsights([
+            {
+              icon: 'star',
+              value: '4.9',
+              label: 'Avg. client ratings in Development & IT',
+            },
+            {
+              icon: 'clipboard',
+              value: '211k+',
+              label: 'Projects completed',
+            },
+            {
+              icon: 'globe',
+              value: '140+',
+              label: 'Countries available',
+            },
+            {
+              icon: 'brain',
+              value: '1,665',
+              label: 'Skills and specialties',
+            },
+          ]);
+          return;
+        }
+
+        const ratedRecruiters = publishedRecruiters.filter(
+          (item) => typeof item.rating === 'number' && item.rating > 0
+        );
+        const avgRating = ratedRecruiters.length
+          ? ratedRecruiters.reduce((sum, item) => sum + Number(item.rating || 0), 0) /
+            ratedRecruiters.length
+          : 0;
+
+        const totalActiveSearches = publishedRecruiters.reduce(
+          (sum, item) => sum + (item.activeSearches?.length || 0),
+          0
+        );
+
+        const locationCount = new Set(
+          publishedRecruiters
+            .map((item) => item.location?.trim())
+            .filter(Boolean)
+        ).size;
+
+        const skillCount = new Set(
+          publishedRecruiters.flatMap((item) =>
+            (item.tags || [])
+              .map((tag) => tag.skill?.value?.trim())
+              .filter(Boolean) as string[]
+          )
+        ).size;
+
+        setInsights([
+          {
+            icon: 'star',
+            value: avgRating > 0 ? avgRating.toFixed(1) : 'N/A',
+            label: 'Average recruiter rating',
+          },
+          {
+            icon: 'clipboard',
+            value: `${totalActiveSearches}+`,
+            label: 'Active recruiter searches',
+          },
+          {
+            icon: 'globe',
+            value: `${locationCount}+`,
+            label: 'Locations covered',
+          },
+          {
+            icon: 'brain',
+            value: `${skillCount}+`,
+            label: 'Skills and specialties',
+          },
+        ]);
       } catch (err) {
         console.error('Failed to fetch insights:', err);
         // Fallback to default data if API fails

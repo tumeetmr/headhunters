@@ -204,7 +204,7 @@ export default function RecruiterDetailPage() {
   const phoneLink = recruiter.links.find((l) => l.type === "PHONE");
 
   return (
-    <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 py-8 sm:px-6 lg:px-8">
       {/* Back link */}
       <Link
         href="/"
@@ -214,224 +214,247 @@ export default function RecruiterDetailPage() {
         {t("recruiter.back")}
       </Link>
 
-      {/* Profile header */}
-      <div className="mt-8 flex flex-col gap-8 md:flex-row">
-        {/* Photo */}
-        <div className="relative aspect-square w-full max-w-xs shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
-          {recruiter.photoUrl ? (
-            <Image
-              src={recruiter.photoUrl}
-              alt={displayName}
-              fill
-              className="object-cover"
-              sizes="320px"
-              priority
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800">
-              <span className="text-6xl font-bold text-zinc-400 dark:text-zinc-500">
-                {displayName.charAt(0)}
-              </span>
-            </div>
-          )}
-        </div>
+      {/* Main content card */}
+      <div className="mt-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        {/* Profile header section */}
+        <div className="flex flex-col gap-8 p-6 md:flex-row md:p-8 lg:p-10">
+          {/* Photo */}
+          <div className="relative aspect-square w-full max-w-sm shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-800">
+            {recruiter.photoUrl ? (
+              <Image
+                src={recruiter.photoUrl}
+                alt={displayName}
+                fill
+                className="object-cover"
+                sizes="320px"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800">
+                <span className="text-6xl font-bold text-zinc-400 dark:text-zinc-500">
+                  {displayName.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
 
-        {/* Info */}
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-primary-text dark:text-zinc-50 sm:text-3xl">
-                {displayName}
-              </h1>
-              <p className="mt-1 text-base text-zinc-500 dark:text-zinc-400">
-                {recruiter.title}
-              </p>
-              {recruiter.tagline && (
-                <p className="mt-1 text-sm italic text-zinc-400 dark:text-zinc-500">
-                  {recruiter.tagline}
+          {/* Info */}
+          <div className="flex-1">
+            {/* Header with badge */}
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                  {displayName}
+                </h1>
+                <p className="mt-2 text-lg font-medium text-zinc-600 dark:text-zinc-300">
+                  {recruiter.title}
                 </p>
+                {recruiter.tagline && (
+                  <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 italic">
+                    "{recruiter.tagline}"
+                  </p>
+                )}
+              </div>
+              {recruiter.isLeadPartner && recruiter.partnerBadge && (
+                <span className="inline-block shrink-0 rounded-full bg-linear-to-r from-[#36CCC7] to-[#34E89E] px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow-lg">
+                  ⭐ {recruiter.partnerBadge}
+                </span>
               )}
             </div>
-            {recruiter.isLeadPartner && recruiter.partnerBadge && (
-              <span className="shrink-0 rounded-full bg-linear-to-r from-[#36CCC7] to-[#34E89E] px-3 py-1 text-xs font-semibold text-white">
-                {recruiter.partnerBadge}
-              </span>
-            )}
-          </div>
 
-          {/* Meta row */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
-            {recruiter.location && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {recruiter.location}
-              </span>
-            )}
-            {recruiter.yearsExperience != null && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {recruiter.yearsExperience} {t("recruiter.yrsExperience")}
-              </span>
-            )}
-            {recruiter.rating > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                {recruiter.rating.toFixed(1)}
-              </span>
-            )}
-          </div>
+            {/* Meta row */}
+            <div className="mt-6 flex flex-wrap items-center gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              {recruiter.location && (
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-zinc-400" />
+                  {recruiter.location}
+                </span>
+              )}
+              {recruiter.yearsExperience != null && (
+                <span className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-zinc-400" />
+                  {recruiter.yearsExperience} {t("recruiter.yrsExperience")}
+                </span>
+              )}
+              {recruiter.rating > 0 && (
+                <span className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < Math.round(recruiter.rating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-zinc-300 dark:text-zinc-600"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span>{recruiter.rating.toFixed(1)}</span>
+                </span>
+              )}
+            </div>
 
-          {/* Contact links */}
-          <div className="mt-4 flex flex-wrap gap-3">
-            {recruiter.publicEmail && (
-              <a
-                href={`mailto:${recruiter.publicEmail}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <Mail className="h-4 w-4" />
-                {t("recruiter.email")}
-              </a>
+            {/* Bio */}
+            {recruiter.bio && (
+              <div className="mt-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
+                <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 whitespace-pre-line">
+                  {recruiter.bio}
+                </p>
+              </div>
             )}
-            {(recruiter.publicPhone || phoneLink) && (
-              <a
-                href={`tel:${recruiter.publicPhone || phoneLink?.url}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <Phone className="h-4 w-4" />
-                {t("recruiter.call")}
-              </a>
-            )}
-            {linkedinLink && (
-              <a
-                href={linkedinLink.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <Linkedin className="h-4 w-4" />
-                LinkedIn
-              </a>
-            )}
-            {recruiter.links
-              .filter((l) => l.type !== "LINKEDIN" && l.type !== "PHONE")
-              .map((link) => (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-primary-text transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  {link.label}
-                </a>
-              ))}
 
-            {/* Request Button for Companies */}
-            {isCompany && (
-              <button
-                onClick={() => setIsFormOpen(true)}
-                disabled={isSubmitting || isLoadingForm || !formTemplate}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition-all hover:bg-emerald-600 disabled:opacity-60 dark:border-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    Requesting...
-                  </>
-                ) : isLoadingForm ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" />
-                    Request Recruiter
-                  </>
+            {/* Action buttons - improved layout */}
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {recruiter.publicEmail && (
+                  <a
+                    href={`mailto:${recruiter.publicEmail}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </a>
                 )}
-              </button>
+                {(recruiter.publicPhone || phoneLink) && (
+                  <a
+                    href={`tel:${recruiter.publicPhone || phoneLink?.url}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call
+                  </a>
+                )}
+                {linkedinLink && (
+                  <a
+                    href={linkedinLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn
+                  </a>
+                )}
+                {recruiter.links
+                  .filter((l) => l.type !== "LINKEDIN" && l.type !== "PHONE")
+                  .slice(0, 2)
+                  .map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {link.label}
+                    </a>
+                  ))}
+              </div>
+
+              {/* Request Button for Companies - Primary CTA */}
+              {isCompany && (
+                <button
+                  onClick={() => setIsFormOpen(true)}
+                  disabled={isSubmitting || isLoadingForm || !formTemplate}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-700 dark:hover:bg-emerald-600 whitespace-nowrap"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      Requesting...
+                    </>
+                  ) : isLoadingForm ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Request Recruiter
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Status Message */}
+            {message && (
+              <div
+                className={`mt-4 rounded-lg border px-4 py-3 text-sm font-medium ${
+                  message.type === "success"
+                    ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
+                    : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
+                }`}
+              >
+                {message.text}
+              </div>
             )}
           </div>
-
-          {/* Status Message */}
-          {message && (
-            <div
-              className={`mt-4 rounded-lg border px-4 py-2.5 text-sm font-medium ${
-                message.type === "success"
-                  ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
-                  : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
-          {/* Bio */}
-          {recruiter.bio && (
-            <div className="mt-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-                {t("recruiter.about")}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 whitespace-pre-line">
-                {recruiter.bio}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Tags sections */}
-      <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
-        {expertiseTags.length > 0 && (
-          <TagSection title={t("recruiter.expertise")} tags={expertiseTags} />
-        )}
-        {industryTags.length > 0 && (
-          <TagSection title={t("recruiter.industries")} tags={industryTags} />
-        )}
-        {languageTags.length > 0 && (
-          <TagSection title={t("recruiter.languages")} tags={languageTags} />
-        )}
-        {certTags.length > 0 && (
-          <TagSection title={t("recruiter.certifications")} tags={certTags} />
-        )}
-      </div>
-
-      {/* Skills */}
-      {skills.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            {t("recruiter.skills")}
-          </h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <span
-                key={skill.id}
-                className="rounded-full bg-linear-to-r from-[#36CCC7]/10 to-[#34E89E]/10 px-3 py-1 text-sm font-medium text-[#2BA8A3] dark:text-[#36CCC7]"
-              >
-                {skill.value}
-              </span>
-            ))}
+      {/* Tags and Skills sections */}
+      {(expertiseTags.length > 0 ||
+        industryTags.length > 0 ||
+        languageTags.length > 0 ||
+        certTags.length > 0 ||
+        skills.length > 0) && (
+        <div className="mt-8 space-y-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {expertiseTags.length > 0 && (
+              <TagCard title={t("recruiter.expertise")} tags={expertiseTags} />
+            )}
+            {industryTags.length > 0 && (
+              <TagCard title={t("recruiter.industries")} tags={industryTags} />
+            )}
+            {languageTags.length > 0 && (
+              <TagCard title={t("recruiter.languages")} tags={languageTags} />
+            )}
+            {certTags.length > 0 && (
+              <TagCard title={t("recruiter.certifications")} tags={certTags} />
+            )}
           </div>
+
+          {/* Skills section */}
+          {skills.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                {t("recruiter.skills")}
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <span
+                    key={skill.id}
+                    className="rounded-lg bg-linear-to-r from-[#36CCC7]/10 to-[#34E89E]/10 px-3 py-1.5 text-sm font-medium text-[#2BA8A3] dark:text-[#36CCC7]"
+                  >
+                    {skill.value}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Insights */}
       {recruiter.insights.filter((i) => i.status === "PUBLISHED").length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("recruiter.insights")}
           </h2>
-          <div className="mt-4 flex flex-wrap justify-center gap-6">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recruiter.insights
               .filter((i) => i.status === "PUBLISHED")
               .sort((a, b) => a.sortOrder - b.sortOrder)
               .map((insight) => (
                 <div
                   key={insight.id}
-                  className="w-80 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+                  className="overflow-hidden rounded-lg border border-zinc-100 dark:border-zinc-800"
                 >
-                  <div className="relative aspect-9/16 w-full">
+                  <div className="relative aspect-9/16 w-full bg-zinc-100 dark:bg-zinc-800">
                     <iframe
                       src={insight.mediaUrl}
                       title={insight.title}
@@ -447,33 +470,63 @@ export default function RecruiterDetailPage() {
         </div>
       )}
 
-      {/* Request Form Dialog */}
+      {/* Request Form Dialog - Improved UX */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Request {displayName}</DialogTitle>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-2xl">
+          <DialogHeader className="space-y-1 pb-4">
+            <DialogTitle className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              Request {displayName}
+            </DialogTitle>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-normal">
+              Tell us about your needs and we'll connect you shortly
+            </p>
           </DialogHeader>
-          {formTemplate && (
-            <FormRenderer
-              template={formTemplate}
-              isLoading={isSubmitting}
-              onSubmit={handleFormSubmit}
-              submitButtonLabel="Send Request"
-            />
-          )}
-          {message && (
-            <div
-              className={`rounded-lg border px-4 py-2.5 text-sm font-medium ${
-                message.type === "success"
-                  ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
-                  : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
+
+          <div className="space-y-4">
+            {formTemplate && (
+              <div>
+                <FormRenderer
+                  template={formTemplate}
+                  isLoading={isSubmitting}
+                  onSubmit={handleFormSubmit}
+                  submitButtonLabel="Send Request"
+                />
+              </div>
+            )}
+            {message && (
+              <div
+                className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                  message.type === "success"
+                    ? "border-green-300 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300"
+                    : "border-red-300 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function TagCard({ title, tags }: { title: string; tags: { id: string; skill: { value: string } }[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        {title}
+      </h3>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <span
+            key={tag.id}
+            className="inline-block rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+          >
+            {tag.skill.value}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

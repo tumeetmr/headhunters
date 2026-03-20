@@ -170,6 +170,7 @@ export const Card = ({
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null!);
+  const previousBodyOverflowRef = useRef<string | null>(null);
   const { onCardClose } = useContext(CarouselContext);
 
   useEffect(() => {
@@ -180,13 +181,23 @@ export const Card = ({
     }
 
     if (open) {
+      if (previousBodyOverflowRef.current === null) {
+        previousBodyOverflowRef.current = document.body.style.overflow;
+      }
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow =
+        previousBodyOverflowRef.current ?? "";
+      previousBodyOverflowRef.current = null;
     }
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow =
+        previousBodyOverflowRef.current ?? "";
+      previousBodyOverflowRef.current = null;
+    };
   }, [open]);
 
   useOutsideClick(containerRef, () => handleClose());

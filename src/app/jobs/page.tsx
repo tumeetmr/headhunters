@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   MapPin,
   Briefcase,
@@ -15,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { get } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { get, post } from "@/lib/api";
+import { profileApi } from "@/lib/profile-api";
 
 interface Job {
   id: string;
@@ -28,12 +32,13 @@ interface Job {
   salaryMax?: number;
   salaryCurrency: string;
   description: string;
-  skills: Array<{ skill: { name: string } }>;
+  skills: Array<{ skill: { id: string; value?: string; name?: string } }>;
   status: string;
   feeType?: string;
 }
 
 function JobsPageContent() {
+  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +51,40 @@ function JobsPageContent() {
   const [salaryMin, setSalaryMin] = useState(0);
   const [salaryMax, setSalaryMax] = useState(50000000);
   const [sortOption, setSortOption] = useState<string>("recommended");
+  const [recruiterProfileId, setRecruiterProfileId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [proposalPitch, setProposalPitch] = useState("");
+  const [estimatedDays, setEstimatedDays] = useState("");
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [proposalMessage, setProposalMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const isRecruiter = session?.user?.role === "RECRUITER";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRecruiterProfile() {
+      if (!isRecruiter) {
+        setRecruiterProfileId(null);
+        return;
+      }
+
+      try {
+        const profile = await profileApi.getUserProfile();
+        if (!isMounted) return;
+        setRecruiterProfileId(profile.recruiterProfile?.id ?? null);
+      } catch {
+        if (!isMounted) return;
+        setRecruiterProfileId(null);
+      }
+    }
+
+    void loadRecruiterProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isRecruiter]);
 
   const quickFilters = ["New", "Remote work", "Saved", "Part-time", "High salary"];
   const levels = ["EXECUTIVE", "SENIOR", "MID", "JUNIOR"];
@@ -138,7 +177,7 @@ function JobsPageContent() {
         const searchText = [
           job.title,
           job.description,
-          ...job.skills.map((skillItem) => skillItem.skill.name),
+          ...job.skills.map((skillItem) => skillItem.skill.value || skillItem.skill.name || ""),
         ]
           .join(" ")
           .toLowerCase();
@@ -175,6 +214,64 @@ function JobsPageContent() {
     selectedLevel.length +
     selectedCategories.length +
     (salaryMin > 0 || salaryMax < 50000000 ? 1 : 0);
+
+  async function handleSubmitProposal() {
+    if (!selectedJob || !recruiterProfileId) {
+      setProposalMessage({
+        type: "error",
+        text: "Missing recruiter profile. Please complete your recruiter profile first.",
+      });
+      return;
+    }
+
+    if (!proposalPitch.trim()) {
+      setProposalMessage({ type: "error", text: "Pitch is required." });
+      return;
+    }
+
+    const parsedDays = estimatedDays.trim() ? Number(estimatedDays) : undefined;
+    if (parsedDays !== undefined && (!Number.isFinite(parsedDays) || parsedDays <= 0)) {
+      setProposalMessage({
+        type: "error",
+        text: "Estimated days must be a valid positive number.",
+      });
+      return;
+    }
+
+    setIsSubmittingProposal(true);
+    setProposalMessage(null);
+
+    try {
+      await post("/applications", {
+        recruiterProfileId,
+        jobOpeningId: selectedJob.id,
+        pitch: proposalPitch.trim(),
+        estimatedDays: parsedDays,
+      });
+
+      setProposalMessage({
+        type: "success",
+        text: "Proposal submitted successfully.",
+      });
+
+      setTimeout(() => {
+        setSelectedJob(null);
+        setProposalPitch("");
+        setEstimatedDays("");
+        setProposalMessage(null);
+      }, 900);
+    } catch (submitError) {
+      setProposalMessage({
+        type: "error",
+        text:
+          submitError instanceof Error
+            ? submitError.message
+            : "Failed to submit proposal.",
+      });
+    } finally {
+      setIsSubmittingProposal(false);
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -476,13 +573,13 @@ function JobsPageContent() {
 
                     {job.skills.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {job.skills.map((jobSkill) => (
+                        {job.skills.map((jobSkill, skillIndex) => (
                           <Badge
-                            key={jobSkill.skill.name}
+                            key={`${job.id}-${jobSkill.skill.id}-${skillIndex}`}
                             variant="outline"
                             className="border-slate-200 bg-white text-slate-700"
                           >
-                            {jobSkill.skill.name}
+                            {jobSkill.skill.value || jobSkill.skill.name || "Skill"}
                           </Badge>
                         ))}
                       </div>
@@ -495,7 +592,23 @@ function JobsPageContent() {
                           {new Intl.NumberFormat("en-US").format(job.salaryMax)} {job.salaryCurrency}
                         </p>
                       )}
-                      <Button>Submit Proposal</Button>
+                      {isRecruiter ? (
+                        <Button
+                          disabled={!recruiterProfileId}
+                          onClick={() => {
+                            setSelectedJob(job);
+                            setProposalMessage(null);
+                          }}
+                        >
+                          Submit Proposal
+                        </Button>
+                      ) : (
+                        <Button asChild>
+                          <Link href={session ? "/profile" : "/login"}>
+                            {session ? "Recruiter Access Required" : "Login to Apply"}
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -504,6 +617,75 @@ function JobsPageContent() {
           )}
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(selectedJob)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedJob(null);
+            setProposalPitch("");
+            setEstimatedDays("");
+            setProposalMessage(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Submit proposal for {selectedJob?.title || "job"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-800">Pitch</label>
+              <textarea
+                value={proposalPitch}
+                onChange={(event) => setProposalPitch(event.target.value)}
+                rows={5}
+                placeholder="Explain why you are a strong fit for this role."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-800">
+                Estimated days to deliver shortlist
+              </label>
+              <Input
+                type="number"
+                min={1}
+                value={estimatedDays}
+                onChange={(event) => setEstimatedDays(event.target.value)}
+                placeholder="e.g. 14"
+              />
+            </div>
+
+            {proposalMessage && (
+              <p
+                className={`text-sm ${
+                  proposalMessage.type === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {proposalMessage.text}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedJob(null)}
+                disabled={isSubmittingProposal}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSubmitProposal} disabled={isSubmittingProposal}>
+                {isSubmittingProposal ? "Submitting..." : "Submit Proposal"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

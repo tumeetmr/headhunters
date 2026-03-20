@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   Mail,
   MapPin,
   PenSquare,
+  LogOut,
   User,
   Facebook,
   Youtube,
@@ -230,6 +231,14 @@ export default function ProfilePage() {
                 >
                   <PenSquare className="w-4 h-4" />
                   Edit
+                </Button>
+                <Button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  variant="ghost"
+                  className="rounded-full gap-2 font-medium text-slate-600 hover:text-slate-900"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
                 </Button>
               </div>
             </div>

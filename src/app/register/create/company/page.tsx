@@ -6,14 +6,12 @@ import { getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { post } from "@/lib/api";
+import { get, post } from "@/lib/api";
 import { useLanguage } from "@/providers/language-provider";
 
 type StepIndex = 1 | 2 | 3;
-type PaymentPlan = "MONTHLY" | "ANNUAL";
 
 type CreateCompanyPayload = {
-  userId: string;
   name: string;
   slug: string;
   industry: string;
@@ -28,6 +26,20 @@ type CreateCompanyPayload = {
 type ApiErrorResponse = {
   message?: string | string[];
   error?: string;
+};
+
+type SubscriptionPlan = {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: string | number;
+  currency: string;
+  interval: "MONTHLY" | "YEARLY";
+  isActive: boolean;
+};
+
+type CreatedCompany = {
+  id: string;
 };
 
 const companySizeOptions = [
@@ -46,11 +58,18 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function formatMoney(price: string | number, currency: string) {
+  const amount = typeof price === "string" ? Number(price) : price;
+  if (!Number.isFinite(amount)) {
+    return `${price} ${currency}`;
+  }
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)} ${currency}`;
+}
+
 export default function CreateCompanyPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
-  const [userId, setUserId] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("");
   const [website, setWebsite] = useState("");
@@ -58,7 +77,9 @@ export default function CreateCompanyPage() {
   const [description, setDescription] = useState("");
   const [companySize, setCompanySize] = useState("");
   const [location, setLocation] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [currentStep, setCurrentStep] = useState<StepIndex>(1);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,7 +116,6 @@ export default function CreateCompanyPage() {
         return;
       }
 
-      setUserId(session.user.id ?? "");
       setEmail(session.user.email ?? "");
       setIsCheckingSession(false);
     }
@@ -106,6 +126,37 @@ export default function CreateCompanyPage() {
       isMounted = false;
     };
   }, [router]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPlans() {
+      try {
+        setIsLoadingPlans(true);
+        const response = await get<SubscriptionPlan[]>("/subscriptions/plans");
+        if (!isMounted) return;
+        const activePlans = Array.isArray(response)
+          ? response.filter((plan) => plan.isActive)
+          : [];
+        setPlans(activePlans);
+        setSelectedPlanId((prev) => prev ?? activePlans[0]?.id ?? null);
+      } catch (planError) {
+        if (!isMounted) return;
+        console.error("Failed to load subscription plans:", planError);
+        setPlans([]);
+      } finally {
+        if (isMounted) {
+          setIsLoadingPlans(false);
+        }
+      }
+    }
+
+    void loadPlans();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function getErrorMessage(submissionError: unknown) {
     if (isAxiosError<ApiErrorResponse>(submissionError)) {
@@ -152,7 +203,7 @@ export default function CreateCompanyPage() {
       return;
     }
 
-    if (!selectedPlan) {
+    if (!selectedPlanId) {
       setError(t("register.selectPayment"));
       return;
     }
@@ -162,13 +213,7 @@ export default function CreateCompanyPage() {
       return;
     }
 
-    if (!userId) {
-      setError(t("register.missingUserId"));
-      return;
-    }
-
     const payload: CreateCompanyPayload = {
-      userId,
       name: companyName.trim(),
       slug: slugify(companyName),
       industry: industry.trim(),
@@ -183,7 +228,10 @@ export default function CreateCompanyPage() {
     setIsSubmitting(true);
 
     try {
-      await post("/companies", payload);
+      const company = await post<CreatedCompany>("/companies", payload);
+      await post(`/subscriptions/company/${company.id}`, {
+        planId: selectedPlanId,
+      });
       router.push("/");
       router.refresh();
     } catch (submissionError) {
@@ -391,98 +439,56 @@ export default function CreateCompanyPage() {
 
             {currentStep === 3 ? (
               <div className="space-y-8">
-                {/* Cards */}
-                <div className="grid gap-5 md:grid-cols-2">
-                  {/* Monthly */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlan("MONTHLY")}
-                    className={`rounded-2xl border px-7 py-7 text-left transition ${
-                      selectedPlan === "MONTHLY"
-                        ? "border-primary-text ring-1 ring-primary-text"
-                        : "border-zinc-200 bg-white hover:border-zinc-300"
-                    }`}
-                  >
-                    <p className="text-base font-semibold text-[#e57373]">{t("register.monthly")}</p>
+                {isLoadingPlans ? (
+                  <p className="text-sm text-zinc-500">Loading subscription plans...</p>
+                ) : plans.length === 0 ? (
+                  <p className="text-sm text-red-500">No active subscription plans found.</p>
+                ) : (
+                  <div className="grid gap-5 md:grid-cols-2">
+                    {plans.map((plan) => {
+                      const isSelected = selectedPlanId === plan.id;
+                      const intervalLabel =
+                        plan.interval === "YEARLY"
+                          ? t("register.userPerYear")
+                          : t("register.userPerMonth");
 
-                    <div className="mt-4 flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-[#101828]">₮300,000</span>
-                      <span className="text-sm text-zinc-400">{t("register.userPerMonth")}</span>
-                    </div>
+                      return (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          className={`rounded-2xl border px-7 py-7 text-left transition ${
+                            isSelected
+                              ? "border-primary-text ring-1 ring-primary-text"
+                              : "border-zinc-200 bg-white hover:border-zinc-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-base font-semibold text-[#e57373]">
+                              {plan.name}
+                            </p>
+                            {isSelected ? (
+                              <span className="rounded-lg bg-primary-text px-3 py-1 text-xs font-semibold text-white">
+                                {t("register.recommended")}
+                              </span>
+                            ) : null}
+                          </div>
 
-                    <hr className="my-5 border-zinc-200" />
+                          <div className="mt-4 flex items-baseline gap-2">
+                            <span className="text-4xl font-bold text-[#101828]">
+                              {formatMoney(plan.price, plan.currency)}
+                            </span>
+                            <span className="text-sm text-zinc-400">{intervalLabel}</span>
+                          </div>
 
-                    <ul className="space-y-3">
-                      {(
-                        [
-                          "register.feature1",
-                          "register.feature2",
-                          "register.feature3",
-                          "register.feature4",
-                          "register.feature5",
-                        ] as const
-                      ).map((key) => (
-                        <li key={key} className="flex items-start gap-3 text-sm text-[#374151]">
-                          <svg className="mt-px h-5 w-5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          {t(key)}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-
-                  {/* Annual */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlan("ANNUAL")}
-                    className={`rounded-2xl border px-7 py-7 text-left transition ${
-                      selectedPlan === "ANNUAL"
-                        ? "border-primary-text ring-1 ring-primary-text"
-                        : "border-zinc-200 bg-white hover:border-zinc-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <p className="text-base font-semibold text-[#e57373]">{t("register.annual")}</p>
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                          -50%
-                        </span>
-                      </div>
-                      <span className="rounded-lg bg-primary-text px-3 py-1 text-xs font-semibold text-white">
-                        {t("register.recommended")}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-[#101828]">₮1,800,000</span>
-                      <span className="text-sm text-zinc-400 line-through">3,600,000</span>
-                      <span className="text-sm text-zinc-400">{t("register.userPerYear")}</span>
-                    </div>
-
-                    <hr className="my-5 border-zinc-200" />
-
-                    <ul className="space-y-3">
-                      {(
-                        [
-                          "register.featureBadge",
-                          "register.feature1",
-                          "register.feature2",
-                          "register.feature3",
-                          "register.feature4",
-                          "register.feature5",
-                        ] as const
-                      ).map((key) => (
-                        <li key={key} className="flex items-start gap-3 text-sm text-[#374151]">
-                          <svg className="mt-px h-5 w-5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          {t(key)}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-                </div>
+                          {plan.description ? (
+                            <p className="mt-4 text-sm text-[#374151]">{plan.description}</p>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ) : null}
 

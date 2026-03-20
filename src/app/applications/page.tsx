@@ -3,9 +3,8 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Briefcase, Building2, MapPin, DollarSign, Calendar, Mail, Phone } from "lucide-react";
-import { useLanguage } from "@/providers/language-provider";
-import { fetchRequests, type RecruitRequest } from "@/lib/forms-api";
+import { Briefcase, Building2, MapPin } from "lucide-react";
+import { fetchRequests, updateRequestStatus } from "@/lib/forms-api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface RequestWithDetails {
@@ -47,12 +46,12 @@ interface RequestWithDetails {
 
 export default function ApplicationsPage() {
   const { data: session } = useSession();
-  const { t } = useLanguage();
   const [requests, setRequests] = useState<RequestWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const isRecruiter = session?.user?.role === "RECRUITER";
 
@@ -97,6 +96,49 @@ export default function ApplicationsPage() {
   const emptyDescription = isRecruiter
     ? "Компаниудаас хүлээн авсан хүсэлтүүд энд харагдах болно"
     : "Your job applications will appear here";
+
+  async function handleStatusUpdate(nextStatus: "ACCEPTED" | "REJECTED") {
+    if (!selectedRequest) return;
+
+    setIsUpdatingStatus(true);
+    setError(null);
+
+    try {
+      const updated = await updateRequestStatus(selectedRequest.id, nextStatus);
+
+      setRequests((prev) =>
+        prev.map((request) =>
+          request.id === updated.id
+            ? {
+                ...request,
+                status: updated.status,
+                updatedAt: updated.updatedAt,
+              }
+            : request
+        )
+      );
+
+      setSelectedRequest((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: updated.status,
+              updatedAt: updated.updatedAt,
+            }
+          : prev
+      );
+
+      setIsDialogOpen(false);
+    } catch (statusError) {
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Failed to update request status"
+      );
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -304,15 +346,22 @@ export default function ApplicationsPage() {
                   {isRecruiter ? "Хаах" : "Close"}
                 </button>
                 {isRecruiter && selectedRequest.status === "PENDING" && (
-                  <button
-                    onClick={() => {
-                      // TODO: Implement accept functionality
-                      setIsDialogOpen(false);
-                    }}
-                    className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700"
-                  >
-                    Зөвшөөрөх
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate("REJECTED")}
+                      disabled={isUpdatingStatus}
+                      className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
+                    >
+                      {isUpdatingStatus ? "Updating..." : "Татгалзах"}
+                    </button>
+                    <button
+                      onClick={() => handleStatusUpdate("ACCEPTED")}
+                      disabled={isUpdatingStatus}
+                      className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isUpdatingStatus ? "Updating..." : "Зөвшөөрөх"}
+                    </button>
+                  </>
                 )}
               </div>
             </div>

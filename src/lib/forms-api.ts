@@ -1,4 +1,4 @@
-import { post, get } from "@/lib/api";
+import { post, get, put } from "@/lib/api";
 
 export interface FormField {
   id: string;
@@ -94,5 +94,5 @@ export async function updateRequestStatus(
   requestId: string,
   status: string
 ): Promise<RecruitRequest> {
-  return post<RecruitRequest>(`/requests/${requestId}/status`, { status });
+  return put<RecruitRequest>(`/requests/${requestId}/status`, { status });
 }
