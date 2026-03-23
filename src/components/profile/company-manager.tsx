@@ -16,13 +16,13 @@ type CompanyProfileData = {
   location?: string | null;
 };
 
-type EditCompanyModalProps = {
+type CompanyManagerProps = {
   profile: CompanyProfileData;
   onClose: () => void;
   onSuccess: () => void;
 };
 
-export default function EditCompanyModal({ profile, onClose, onSuccess }: EditCompanyModalProps) {
+export default function CompanyManager({ profile, onClose, onSuccess }: CompanyManagerProps) {
   const normalizeOptionalString = (value: string) => {
     const trimmed = value.trim();
     return trimmed.length ? trimmed : undefined;

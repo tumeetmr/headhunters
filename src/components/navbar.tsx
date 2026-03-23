@@ -4,30 +4,30 @@ import Link from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StaggeredMenu from "@/components/menu";
+import { NavbarMenu } from "@/components/navbar-menu";
+
+const NAV_LINKS = [
+  { label: "Recruiters", href: "/recruiters" },
+  { label: "Jobs", href: "/jobs" },
+  { label: "How it works", href: "/how-it-works" },
+  { label: "Pricing", href: "/pricing" },
+];
 
 export default function Navbar() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
 
-  const navLinks = [
-    { label: "Recruiters", href: "/recruiters" },
-    { label: "Jobs", href: "/jobs" },
-    { label: "How it works", href: "/how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-  ];
-
   const mobileMenuItems = useMemo(
     () => [
-      ...navLinks.map((link) => ({
+      ...NAV_LINKS.map((link) => ({
         label: link.label,
         ariaLabel: `Go to ${link.label}`,
         link: link.href,
       })),
       isLoggedIn
-        ? { label: "Profile", ariaLabel: "Go to profile", link: "/profile" }
+        ? { label: "Dashboard", ariaLabel: "Go to dashboard", link: "/dashboard" }
         : { label: "Join Us", ariaLabel: "Register account", link: "/register" },
     ],
     [isLoggedIn]
@@ -43,7 +43,7 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden items-center gap-6 md:flex">
-              {navLinks.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -57,11 +57,7 @@ export default function Navbar() {
 
           <div className="hidden items-center md:flex">
             {isLoggedIn ? (
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/profile" aria-label="Profile">
-                  <User className="size-5" />
-                </Link>
-              </Button>
+              <NavbarMenu />
             ) : (
               <Button size="sm" asChild>
                 <Link href="/register">Join Us</Link>

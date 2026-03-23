@@ -92,6 +92,48 @@ export interface UserProfile {
   company: Company | null;
 }
 
+export interface ShortlistItem {
+  id: string;
+  companyId: string;
+  recruiterProfileId: string;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface CompanyShortlistItem {
+  id: string;
+  companyId: string;
+  recruiterProfileId: string;
+  note?: string | null;
+  createdAt: string;
+  recruiterProfile: {
+    id: string;
+    title?: string | null;
+    yearsExperience?: number | null;
+    rating?: number;
+    slug: string;
+    location?: string | null;
+    photoUrl?: string | null;
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+    };
+  };
+}
+
+export interface MyRecruiterRating {
+  canRate: boolean;
+  hasRated: boolean;
+  review: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+}
+
 // Profile API calls
 export const profileApi = {
   async getUserProfile() {
@@ -107,7 +149,7 @@ export const profileApi = {
   },
 
   // Skills
-  async addSkill(recruiterId: string, skillData: any) {
+  async addSkill(recruiterId: string, skillData: Record<string, unknown>) {
     return post(`/recruiters/${recruiterId}/skills`, skillData);
   },
 
@@ -152,5 +194,31 @@ export const profileApi = {
 
   async removeInsight(insightId: string) {
     return del(`/recruiters/insights/${insightId}`);
+  },
+
+  async addRecruiterToShortlist(recruiterProfileId: string, note?: string) {
+    return post<ShortlistItem>(`/companies/shortlist`, {
+      recruiterProfileId,
+      note,
+    });
+  },
+
+  async getCompanyShortlist() {
+    return get<CompanyShortlistItem[]>(`/companies/shortlist`);
+  },
+
+  async removeCompanyShortlistItem(shortlistId: string) {
+    return del<{ id: string }>(`/companies/shortlist/${shortlistId}`);
+  },
+
+  async rateRecruiter(recruiterProfileId: string, rating: number, review?: string) {
+    return post(`/recruiters/${recruiterProfileId}/ratings`, {
+      rating,
+      review,
+    });
+  },
+
+  async getMyRecruiterRating(recruiterProfileId: string) {
+    return get<MyRecruiterRating>(`/recruiters/${recruiterProfileId}/ratings/me`);
   },
 };

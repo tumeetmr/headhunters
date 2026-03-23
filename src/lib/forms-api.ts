@@ -35,15 +35,56 @@ export interface CreateRequestPayload {
 export interface RecruitRequest {
   id: string;
   formTemplateId: string;
-  recruiterId: string;
-  companyId: string;
+  recruiterId: string | null;
+  companyId: string | null;
   status: string;
+  respondedAt?: string | null;
+  counterProposal?: Record<string, unknown> | null;
+  counterProposalMessage?: string | null;
   createdAt: string;
   updatedAt: string;
+  company?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    industry?: string | null;
+    location?: string | null;
+    logoUrl?: string | null;
+    user?: { id: string; name?: string | null; email?: string | null };
+    _count?: {
+      engagements: number;
+      jobOpenings: number;
+      requests: number;
+    };
+  };
+  recruiter?: {
+    id: string;
+    slug?: string | null;
+    title?: string | null;
+    photoUrl?: string | null;
+    tagline?: string | null;
+    yearsExperience?: number | null;
+    location?: string | null;
+    rating?: number;
+    isVerified?: boolean;
+    publicEmail?: string | null;
+    user?: { id: string; name?: string | null; email?: string | null };
+    _count?: {
+      engagements: number;
+      activeSearches: number;
+      tags: number;
+    };
+  };
+  formTemplate?: {
+    id: string;
+    name: string;
+    fields?: FormField[];
+  };
   answers: Array<{
     id: string;
     formFieldId: string;
     value: string;
+    formField?: FormField;
   }>;
 }
 
@@ -95,4 +136,21 @@ export async function updateRequestStatus(
   status: string
 ): Promise<RecruitRequest> {
   return put<RecruitRequest>(`/requests/${requestId}/status`, { status });
+}
+
+export async function submitCounterProposal(
+  requestId: string,
+  payload: {
+    proposal?: Record<string, unknown>;
+    message?: string;
+  }
+): Promise<RecruitRequest> {
+  return put<RecruitRequest>(`/requests/${requestId}/counter`, payload);
+}
+
+export async function resolveCounterProposal(
+  requestId: string,
+  status: "ACCEPTED" | "DECLINED"
+): Promise<RecruitRequest> {
+  return put<RecruitRequest>(`/requests/${requestId}/counter/resolve`, { status });
 }

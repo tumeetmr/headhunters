@@ -11,7 +11,7 @@ const socialLinks = [
 ];
 
 export default function Footer() {
-  const footerLinks = [
+  const navLinks = [
     { label: "Find Recruiters", href: "/recruiters" },
     { label: "Browse Projects", href: "/projects" },
     { label: "How It Works", href: "/how-it-works" },
@@ -20,66 +20,65 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full border-t border-slate-200 bg-slate-50/70">
-      <div className="mx-auto w-full max-w-7xl px-4 pt-10 pb-6 sm:px-6 md:pt-12 md:pb-8 lg:px-8">
-      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/image/lambda.png" alt="Lambda logo" width={100} height={32} priority />
-        </Link>
-        <nav className="flex flex-wrap items-center gap-4 md:gap-6">
-          {footerLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-               className="text-sm font-medium text-primary-text transition-colors hover:text-primary-text/80 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              {link.label}
+    <footer className="w-full border-slate-200 bg-white">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Top Section - Logo and Navigation */}
+        <div className="flex flex-col items-start justify-between gap-8 border-slate-200 py-8 md:flex-row md:items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/image/lambda.png" alt="Lambda logo" width={100} height={32} priority />
+          </Link>
+          <nav className="flex flex-wrap items-center gap-6 md:gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Middle Section - Contact Info and Social */}
+        <div className="flex flex-col items-start justify-between gap-10 py-12 md:flex-row md:items-start">
+          <div className="space-y-4 text-sm text-slate-700">
+            <p className="text-base font-semibold text-slate-900">Hire the recruiter. Not the agency.</p>
+            <p className="text-slate-600">
+              Headhunters connects companies directly with elite independent recruiters.
+              No retainers. No middlemen. Just measurable hiring outcomes.
+            </p>
+            <p className="font-semibold text-slate-900">hello@lambda.global · +976 8888 8003</p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {socialLinks.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                className="flex h-20 w-20 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                <social.icon className="h-6 w-6" />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom Section - Copyright and Legal Links */}
+        <div className="flex flex-col items-start justify-between gap-6 border-t border-slate-200 py-8 text-sm text-slate-600 md:flex-row md:items-center">
+          <p>© 2026 Huntly by Lambda. All rights reserved.</p>
+          <div className="flex items-center gap-8">
+            <Link href="/privacy" className="transition-colors hover:text-slate-900">
+              Privacy Policy
             </Link>
-          ))}
-        </nav>
-      </div>
-
-      <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
-        <div className="max-w-xl space-y-2 text-sm text-slate-600">
-          <p className="text-base font-semibold text-slate-900">Hire the recruiter. Not the agency.</p>
-          <p>
-            Headhunters connects companies directly with elite independent recruiters.
-            No retainers. No middlemen. Just measurable hiring outcomes.
-          </p>
-          <p>
-            hello@lambda.global · +976 8888 8003
-          </p>
+            <Link href="/terms" className="transition-colors hover:text-slate-900">
+              Terms of Service
+            </Link>
+          </div>
         </div>
-
-        <div className="flex items-center gap-4">
-          {socialLinks.map((social) => (
-            <a
-              key={social.label}
-              href={social.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={social.label}
-              className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 md:h-16 md:w-16"
-            >
-              <social.icon className="h-5 w-5" />
-            </a>
-          ))}
-        </div>
-      </div>
-
-      <hr className="mt-10 border-slate-200" />
-
-      <div className="mt-6 flex flex-col items-start justify-between gap-4 text-sm text-slate-500 md:flex-row md:items-center">
-        <p>© 2026 Huntly by Lambda. All rights reserved.</p>
-        <div className="flex items-center gap-6">
-          <Link href="/privacy" className="transition-colors hover:text-slate-900">
-            Privacy Policy
-          </Link>
-          <Link href="/terms" className="transition-colors hover:text-slate-900">
-            Terms of Service
-          </Link>
-        </div>
-      </div>
       </div>
     </footer>
   );

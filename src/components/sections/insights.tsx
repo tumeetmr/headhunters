@@ -29,7 +29,7 @@ const iconMap = {
   brain: BrainCircuit,
 };
 
-export default function InsightsSection() {
+export default function Insights() {
   const [insights, setInsights] = useState<InsightData[]>([]);
   const [loading, setLoading] = useState(true);
 

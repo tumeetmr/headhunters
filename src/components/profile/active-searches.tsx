@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { profileApi, type ActiveSearch } from "@/lib/profile-api";
 
-interface ActiveSearchesManagerProps {
+interface ActiveSearchesProps {
   searches: ActiveSearch[];
   recruiterId: string;
   isEditing: boolean;
@@ -15,12 +15,12 @@ interface ActiveSearchesManagerProps {
 
 const SEARCH_STATUSES = ["ACTIVE", "ON_HOLD", "CLOSED"];
 
-export default function ActiveSearchesManager({
+export default function ActiveSearches({
   searches,
   recruiterId,
   isEditing,
   onSearchesChange,
-}: ActiveSearchesManagerProps) {
+}: ActiveSearchesProps) {
   const [localSearches, setLocalSearches] = useState<ActiveSearch[]>(
     searches || []
   );

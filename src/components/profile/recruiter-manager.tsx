@@ -22,13 +22,13 @@ type RecruiterProfileData = {
   rating?: number;
 };
 
-type EditRecruiterModalProps = {
+type RecruiterManagerProps = {
   profile: RecruiterProfileData;
   onClose: () => void;
   onSuccess: () => void;
 };
 
-export default function EditRecruiterModal({ profile, onClose, onSuccess }: EditRecruiterModalProps) {
+export default function RecruiterManager({ profile, onClose, onSuccess }: RecruiterManagerProps) {
   const normalizeOptionalString = (value: string) => {
     const trimmed = value.trim();
     return trimmed.length ? trimmed : undefined;

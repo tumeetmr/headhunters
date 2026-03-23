@@ -56,16 +56,6 @@ const translations = {
     "steps.step4.title": "Offer/Contract Negotiation",
     "steps.step4.time": "Estimated Time: 3-5 days",
 
-    // Why Lambda
-    "whyLambda.title": "Why Lambda?",
-    "whyLambda.subtitle": "We help you find the right talent through AI-assisted matching, access to a 14,000-candidate database, and support from experienced industry recruiters.",
-    "whyLambda.card1.title": "AI-powered\nmatching",
-    "whyLambda.card1.description": "Advanced AI analyzes your company's needs and recommends candidates with the most relevant experience and strongest fit.",
-    "whyLambda.card2.title": "Database of\n14,000 talents",
-    "whyLambda.card2.description": "Access a broad, cross-industry talent database so you can reach qualified candidates faster and with better precision.",
-    "whyLambda.card3.title": "Supported by\nexperienced experts",
-    "whyLambda.card3.description": "Our senior recruiters with 20+ years of HR experience help identify and secure the right talent for your team.",
-
     // Footer
     "footer.home": "Home page",
     "footer.about": "About",
@@ -239,16 +229,6 @@ const translations = {
     "steps.step3.time": "Хугацаа: 3-5 хоног",
     "steps.step4.title": "Санал/Гэрээ хэлэлцээр",
     "steps.step4.time": "Хугацаа: 3-5 хоног",
-
-    // Why Lambda
-    "whyLambda.title": "Яагаад Ламбда гэж?",
-    "whyLambda.subtitle": "Таны бизнес хэрэгцээтэй талентыг бид хиймэл оюун ухаанаар, 14000 талентын мэдээллийн сангаас, салбартаа тэргүүлэгч мэргэжилтнүүдийн туслалцаатайгаар олж өгнө!",
-    "whyLambda.card1.title": "Хиймэл Оюун\nУхаанаар\nтоноглогдсон",
-    "whyLambda.card1.description": "Дэвшилтэт хиймэл оюун ухаанаар Компаний хэрэгцээнд дүн шинжилгээ хийж, тухайн үе дунд нийцэх туршлага чанартай талентыг санал болгоно.",
-    "whyLambda.card2.title": "14000 талентын\nмэдээллийн сан",
-    "whyLambda.card2.description": "Бүх салбарын мэргэжсэн талент бүхий мэдээллийн сангаас таны шаардлагад төгс нийцэх талентыг хурдан шуурхай олж өгнө.",
-    "whyLambda.card3.title": "Туршлагатай хамт\nолон",
-    "whyLambda.card3.description": "Бүх салбарт хүний нөөцийн чиглэлээр 20-с дээш жил ажилласан мэргэжлийн хамт олон таны компанид нэн шаардлагатай талентыг олоход тусална.",
 
     // Footer
     "footer.home": "Нүүр хуудас",

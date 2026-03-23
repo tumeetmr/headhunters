@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { VanishInput } from "@/components/ui/vanish-input";
 import TalentSteps from "@/components/talent-steps";
-import RecruiterList from "@/components/recruiter-list";
-import InsightsSection from "@/components/insights-section";
+import RecruiterList from "@/components/sections/recruiter-list";
+import Insights from "@/components/sections/insights";
 
 export default function Home() {
   const router = useRouter();
@@ -147,29 +146,7 @@ export default function Home() {
           </Tabs>
         </section>
 
-        <InsightsSection />
-
-        <section className="py-16 sm:py-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-950">What companies say</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <p className="text-base leading-relaxed text-slate-700">
-                  &quot;We hired a CFO in 3 weeks through Huntly. The recruiter already knew our industry cold.&quot;
-                </p>
-                <p className="mt-4 text-sm font-medium text-slate-500">Founder, Series B SaaS company</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <p className="text-base leading-relaxed text-slate-700">
-                  &quot;Finally a platform where my expertise is visible. I closed 4 contracts in my first month.&quot;
-                </p>
-                <p className="mt-4 text-sm font-medium text-slate-500">Independent recruiter, 9 years experience</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        <Insights />
 
         <section className="py-16 sm:py-20">
           <div

@@ -18,8 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { get, post } from "@/lib/api";
-import { profileApi } from "@/lib/profile-api";
+import { get } from "@/lib/api";
+import { fetchMyProposals, submitProposal } from "@/lib/proposals-api";
 
 interface Job {
   id: string;
@@ -51,7 +51,7 @@ function JobsPageContent() {
   const [salaryMin, setSalaryMin] = useState(0);
   const [salaryMax, setSalaryMax] = useState(50000000);
   const [sortOption, setSortOption] = useState<string>("recommended");
-  const [recruiterProfileId, setRecruiterProfileId] = useState<string | null>(null);
+  const [myProposalStatuses, setMyProposalStatuses] = useState<Record<string, string>>({});
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [proposalPitch, setProposalPitch] = useState("");
   const [estimatedDays, setEstimatedDays] = useState("");
@@ -63,23 +63,28 @@ function JobsPageContent() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadRecruiterProfile() {
+    async function loadMyProposals() {
       if (!isRecruiter) {
-        setRecruiterProfileId(null);
+        setMyProposalStatuses({});
         return;
       }
 
       try {
-        const profile = await profileApi.getUserProfile();
+        const proposals = await fetchMyProposals();
         if (!isMounted) return;
-        setRecruiterProfileId(profile.recruiterProfile?.id ?? null);
+
+        const byJob = proposals.reduce<Record<string, string>>((acc, proposal) => {
+          acc[proposal.jobOpeningId] = proposal.status;
+          return acc;
+        }, {});
+        setMyProposalStatuses(byJob);
       } catch {
         if (!isMounted) return;
-        setRecruiterProfileId(null);
+        setMyProposalStatuses({});
       }
     }
 
-    void loadRecruiterProfile();
+    void loadMyProposals();
 
     return () => {
       isMounted = false;
@@ -216,10 +221,19 @@ function JobsPageContent() {
     (salaryMin > 0 || salaryMax < 50000000 ? 1 : 0);
 
   async function handleSubmitProposal() {
-    if (!selectedJob || !recruiterProfileId) {
+    if (!selectedJob) {
       setProposalMessage({
         type: "error",
-        text: "Missing recruiter profile. Please complete your recruiter profile first.",
+        text: "Select a job to submit a proposal.",
+      });
+      return;
+    }
+
+    const currentStatus = myProposalStatuses[selectedJob.id];
+    if (currentStatus && currentStatus !== "WITHDRAWN") {
+      setProposalMessage({
+        type: "error",
+        text: `You already submitted a proposal for this job (${currentStatus}).`,
       });
       return;
     }
@@ -242,12 +256,16 @@ function JobsPageContent() {
     setProposalMessage(null);
 
     try {
-      await post("/applications", {
-        recruiterProfileId,
+      const created = await submitProposal({
         jobOpeningId: selectedJob.id,
         pitch: proposalPitch.trim(),
         estimatedDays: parsedDays,
       });
+
+      setMyProposalStatuses((prev) => ({
+        ...prev,
+        [created.jobOpeningId]: created.status,
+      }));
 
       setProposalMessage({
         type: "success",
@@ -528,56 +546,73 @@ function JobsPageContent() {
 
           {/* RESULTS */}
           {!loading && !error && filteredJobs.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredJobs.map((job) => (
                 <Card
                   key={job.id}
-                  className="cursor-pointer border-slate-200 bg-white transition-all duration-200 hover:shadow-lg"
+                  className="cursor-pointer border border-slate-200 bg-white transition-all duration-200 hover:border-slate-300 hover:shadow-md"
                 >
-                  <CardHeader>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="border-slate-200 text-slate-600">
-                        {job.company.name}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">
-                        {job.status}
-                      </Badge>
-                      {job.employmentType && (
-                        <Badge variant="outline" className="border-slate-200 text-slate-600">
-                          {job.employmentType}
-                        </Badge>
+                  <CardContent className="p-3 sm:p-4">
+                    {/* TOP ROW: TITLE & BADGES */}
+                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base font-bold text-slate-950 line-clamp-1">
+                          {job.title}
+                        </CardTitle>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-200">
+                            {job.company.name}
+                          </Badge>
+                          <Badge className="text-xs bg-green-100 text-green-700">
+                            {job.status}
+                          </Badge>
+                          {job.employmentType && (
+                            <Badge variant="outline" className="text-xs border-amber-200 bg-amber-50 text-amber-700">
+                              {job.employmentType === "PART_TIME" ? "Part-time" : job.employmentType}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* BUDGET - MOBILE: BELOW, DESKTOP: SIDE */}
+                      {job.salaryMax && (
+                        <div className="mt-1 rounded bg-slate-50 px-2 py-1 border border-slate-200 text-right sm:mt-0 sm:ml-2 sm:shrink-0">
+                          <p className="text-xs font-semibold text-slate-600">
+                            {new Intl.NumberFormat("en-US").format(job.salaryMin || 0)} – {new Intl.NumberFormat("en-US").format(job.salaryMax)} {job.salaryCurrency}
+                          </p>
+                        </div>
                       )}
                     </div>
 
-                    <CardTitle className="text-xl">{job.title}</CardTitle>
-
-                    <CardDescription className="flex flex-wrap gap-3 text-sm">
+                    {/* LOCATION & SENIORITY */}
+                    <div className="mb-2 flex flex-wrap gap-3 text-xs text-slate-600">
                       {job.location && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="size-4" />
+                          <MapPin className="size-3 text-slate-400" />
                           {job.location}
                         </span>
                       )}
-                      {job.location && job.seniorityLevel && <span>·</span>}
                       {job.seniorityLevel && (
                         <span className="flex items-center gap-1">
-                          <Briefcase className="size-4" />
+                          <Briefcase className="size-3 text-slate-400" />
                           {job.seniorityLevel}
                         </span>
                       )}
-                    </CardDescription>
-                  </CardHeader>
+                    </div>
 
-                  <CardContent>
-                    <p className="text-sm text-slate-700">{job.description}</p>
+                    {/* DESCRIPTION */}
+                    <p className="mb-2 line-clamp-1 text-xs text-slate-700">
+                      {job.description}
+                    </p>
 
+                    {/* SKILLS - ALL */}
                     {job.skills.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mb-2 flex flex-wrap gap-1">
                         {job.skills.map((jobSkill, skillIndex) => (
                           <Badge
                             key={`${job.id}-${jobSkill.skill.id}-${skillIndex}`}
                             variant="outline"
-                            className="border-slate-200 bg-white text-slate-700"
+                            className="text-xs border-slate-300 bg-slate-50 text-slate-700"
                           >
                             {jobSkill.skill.value || jobSkill.skill.name || "Skill"}
                           </Badge>
@@ -585,31 +620,21 @@ function JobsPageContent() {
                       </div>
                     )}
 
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                      {job.salaryMax && (
-                        <p className="text-sm font-semibold text-slate-900">
-                          Budget: {new Intl.NumberFormat("en-US").format(job.salaryMin || 0)} -{" "}
-                          {new Intl.NumberFormat("en-US").format(job.salaryMax)} {job.salaryCurrency}
-                        </p>
-                      )}
-                      {isRecruiter ? (
-                        <Button
-                          disabled={!recruiterProfileId}
-                          onClick={() => {
-                            setSelectedJob(job);
-                            setProposalMessage(null);
-                          }}
-                        >
-                          Submit Proposal
-                        </Button>
-                      ) : (
-                        <Button asChild>
-                          <Link href={session ? "/profile" : "/login"}>
-                            {session ? "Recruiter Access Required" : "Login to Apply"}
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
+                    {/* ACTION BUTTON */}
+                    {isRecruiter && (
+                      <Button
+                        disabled={Boolean(myProposalStatuses[job.id] && myProposalStatuses[job.id] !== "WITHDRAWN")}
+                        onClick={() => {
+                          setSelectedJob(job);
+                          setProposalMessage(null);
+                        }}
+                        className="w-full h-8 text-xs bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 font-semibold transition-all duration-200"
+                      >
+                        {myProposalStatuses[job.id] && myProposalStatuses[job.id] !== "WITHDRAWN"
+                          ? `✓ ${myProposalStatuses[job.id]}`
+                          : "Submit Proposal"}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}

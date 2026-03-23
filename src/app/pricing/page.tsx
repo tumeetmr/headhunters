@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Check, Minus } from 'lucide-react';
-import { get } from "@/lib/api";
+import { get, post } from '@/lib/api';
+import { profileApi } from '@/lib/profile-api';
 
 interface CompanyPlanFeatures {
   max_active_projects: number;
@@ -24,6 +27,14 @@ interface SubscriptionPlan {
   interval: string;
   features?: CompanyPlanFeatures;
   isActive: boolean;
+}
+
+interface CompanySubscription {
+  id: string;
+  companyId: string;
+  planId: string;
+  status: string;
+  plan: SubscriptionPlan;
 }
 
 type FeatureKey = keyof CompanyPlanFeatures;
@@ -132,16 +143,52 @@ function formatFeatureValue(value: number | boolean, type: FeatureRow['type']) {
 }
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [currentSubscription, setCurrentSubscription] = useState<CompanySubscription | null>(null);
+  const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/register');
+    }
+  }, [router, status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      return;
+    }
+
     const fetchPlans = async () => {
       try {
-        const response = await get('/subscriptions/plans');
-        setPlans((response as any)?.data || response as SubscriptionPlan[]);
+        setError(null);
+        const response = await get<SubscriptionPlan[]>('/subscriptions/plans');
+        const activePlans = Array.isArray(response)
+          ? response.filter((plan) => plan.isActive)
+          : [];
+        setPlans(activePlans);
+
+        if (session.user?.role === 'COMPANY') {
+          const profile = await profileApi.getUserProfile();
+          setCompanyId(profile.company?.id ?? null);
+
+          try {
+            const subscription = await get<CompanySubscription>('/subscriptions/me');
+            setCurrentSubscription(subscription);
+          } catch {
+            setCurrentSubscription(null);
+          }
+        } else {
+          setCompanyId(null);
+          setCurrentSubscription(null);
+        }
       } catch (err) {
         console.error('Failed to fetch subscription plans:', err);
         setError('Failed to load pricing plans');
@@ -150,26 +197,65 @@ export default function PricingPage() {
       }
     };
 
-    fetchPlans();
-  }, []);
+    void fetchPlans();
+  }, [session?.user?.role, status]);
+
+  const handlePlanChange = async (planId: string) => {
+    if (!companyId || session?.user?.role !== 'COMPANY') {
+      return;
+    }
+
+    setUpdatingPlanId(planId);
+    setActionMessage(null);
+    setActionError(null);
+
+    try {
+      const updated = await post<CompanySubscription>(`/subscriptions/company/${companyId}`, {
+        planId,
+      });
+
+      setCurrentSubscription(updated);
+      setActionMessage(`Your subscription is now on ${updated.plan.name}.`);
+    } catch (err) {
+      console.error('Failed to update subscription plan:', err);
+      setActionError('Failed to update subscription plan. Please try again.');
+    } finally {
+      setUpdatingPlanId(null);
+    }
+  };
+
+  const getPriceNumber = (price: number | string) => {
+    const value = typeof price === 'string' ? Number(price) : price;
+    return Number.isFinite(value) ? value : 0;
+  };
 
   const sortedPlans = [...plans]
-    .filter((plan) => plan.isActive)
     .sort((a, b) => {
-    const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
-    const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
-    return priceA - priceB;
-  });
+      const priceA = getPriceNumber(a.price);
+      const priceB = getPriceNumber(b.price);
+      return priceA - priceB;
+    });
+
+  const currentPlanId = currentSubscription?.planId ?? null;
+  const currentPlanPrice = currentSubscription ? getPriceNumber(currentSubscription.plan.price) : null;
+  const isRecruiter = session?.user?.role === 'RECRUITER';
+  const isCompany = session?.user?.role === 'COMPANY';
 
   const featuredPlanId =
     sortedPlans.find((plan) => plan.name.toUpperCase() === 'PROFESSIONAL')?.id ??
     sortedPlans[Math.floor(sortedPlans.length / 2)]?.id;
 
   const hasActivePlans = sortedPlans.length > 0;
-  const comparisonGridColumns = {
-    gridTemplateColumns: `repeat(${sortedPlans.length}, minmax(240px, 1fr))`,
-  };
-  const activeSelectedPlanId = selectedPlanId ?? featuredPlanId;
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex min-h-96 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+          <div className="text-slate-600">Checking your account...</div>
+        </div>
+      </main>
+    );
+  }
 
   if (loading) {
     return (
@@ -192,97 +278,142 @@ export default function PricingPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 text-center sm:mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-          Compare Plans
+    <main className="mx-auto w-full px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mb-12 text-center">
+        <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+          Choose Your Plan
         </h1>
-        <p className="mt-3 text-sm text-slate-600 sm:text-lg">
-          Pick the plan that matches your hiring pace and collaboration needs.
+        <p className="mt-2 text-sm text-slate-600">
+          Select the plan that fits your hiring needs
         </p>
       </div>
 
-      {!hasActivePlans ? (
-        <div className="flex min-h-72 items-center justify-center rounded-3xl border border-slate-200 bg-white text-slate-600 shadow-sm">
-          No active plans available right now.
-        </div>
-      ) : (
-        <div className="no-scrollbar overflow-x-auto pb-2">
-          <div className="min-w-max" style={comparisonGridColumns}>
-            <div className="grid gap-3" style={comparisonGridColumns}>
-              {sortedPlans.map((plan) => {
-                const planFeatures = plan.features ?? defaultFeatures;
-                const isFeatured = plan.id === featuredPlanId;
-                const isSelected = plan.id === activeSelectedPlanId;
-
-                return (
-                  <article
-                    key={plan.id}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        setSelectedPlanId(plan.id);
-                      }
-                    }}
-                    aria-pressed={isSelected}
-                    className={`rounded-2xl border bg-white p-4 shadow-sm transition-all duration-300 ${
-                      isSelected
-                        ? 'border-emerald-400 shadow-emerald-100/70 ring-2 ring-emerald-200'
-                        : isFeatured
-                          ? 'border-emerald-300 shadow-emerald-100/70'
-                          : 'border-slate-200 hover:-translate-y-0.5 hover:shadow-md'
-                    }`}
-                  >
-                    <p className="text-lg font-black text-slate-950">{plan.name}</p>
-                    <p className="mt-1 min-h-8 text-xs text-slate-500">
-                      {plan.description || 'Flexible subscription plan'}
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-slate-900">
-                      {formatCurrency(plan.currency, plan.price)}
-                      <span className="ml-1 text-xs font-medium text-slate-500">
-                        / {plan.interval.toLowerCase()}
-                      </span>
-                    </p>
-
-                    {isFeatured ? (
-                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                        Most popular
-                      </span>
-                    ) : null}
-
-                    <div className="mt-2 text-[11px] font-medium text-slate-500">
-                      {isSelected ? 'Selected plan' : 'Click to select'}
-                    </div>
-
-                    <div className="mt-4 space-y-0">
-                      {featureRows.map((feature) => {
-                        const value = planFeatures[feature.key];
-
-                        return (
-                          <div
-                            key={`${plan.id}-${feature.key}`}
-                            className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 text-xs font-medium text-slate-800 last:border-b-0"
-                          >
-                            <span className="text-slate-600">{feature.label}</span>
-                            <span className="shrink-0">{formatFeatureValue(value, feature.type)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
+      {isRecruiter && (
+        <div className="mx-auto mb-8 max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-center text-sm text-amber-800">
+          Subscription plans are for company accounts. Recruiter accounts do not have company billing access.
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 sm:text-sm">
-        Notes: values shown as <span className="font-semibold">Unlimited</span> mean there is no cap.
-      </div>
+      {isCompany && currentSubscription && (
+        <div className="mx-auto mb-8 max-w-3xl rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-center text-sm text-emerald-800">
+          Current plan: <span className="font-semibold">{currentSubscription.plan.name}</span>
+        </div>
+      )}
+
+      {actionMessage && (
+        <div className="mx-auto mb-8 max-w-3xl rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-center text-sm text-emerald-800">
+          {actionMessage}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="mx-auto mb-8 max-w-3xl rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-center text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
+
+      {!hasActivePlans ? (
+        <div className="mx-auto flex max-w-2xl items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 text-slate-600">
+          No active plans available
+        </div>
+      ) : (
+        <div className="mx-auto max-w-6xl space-y-12">
+          {/* Plans Grid */}
+          <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(sortedPlans.length, 3)}, 1fr)` }}>
+            {sortedPlans.map((plan) => {
+              const isFeatured = plan.id === featuredPlanId;
+              const planFeatures = plan.features ?? defaultFeatures;
+              const isCurrentPlan = currentPlanId === plan.id;
+              const planPrice = getPriceNumber(plan.price);
+              const isUpgrade = currentPlanPrice !== null ? planPrice > currentPlanPrice : false;
+              const isDowngrade = currentPlanPrice !== null ? planPrice < currentPlanPrice : false;
+              const canChangePlan = Boolean(isCompany && companyId);
+              const isUpdatingThisPlan = updatingPlanId === plan.id;
+
+              let buttonText = 'Choose Plan';
+              if (isCurrentPlan) {
+                buttonText = 'Current Plan';
+              } else if (isUpgrade) {
+                buttonText = 'Upgrade';
+              } else if (isDowngrade) {
+                buttonText = 'Downgrade';
+              } else if (canChangePlan) {
+                buttonText = 'Switch Plan';
+              }
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-2xl border-2 p-8 transition-all ${
+                    isFeatured
+                      ? 'border-emerald-500 bg-linear-to-br from-emerald-50 to-white shadow-lg ring-2 ring-emerald-100'
+                      : 'border-slate-200 bg-white hover:shadow-lg'
+                  }`}
+                >
+                  {isFeatured && (
+                    <div className="mb-3 inline-flex rounded-full bg-emerald-100 px-3 py-1">
+                      <span className="text-xs font-semibold text-emerald-700">★ Most Popular</span>
+                    </div>
+                  )}
+
+                  <h3 className="text-xl font-black text-slate-950">{plan.name}</h3>
+                  {plan.description && (
+                    <p className="mt-1 text-xs text-slate-600">{plan.description}</p>
+                  )}
+
+                  <div className="mt-6 flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-slate-950">
+                      {formatCurrency(plan.currency, plan.price).split(' ')[0]}
+                    </span>
+                    <span className="text-sm text-slate-600">
+                      {plan.currency} / {plan.interval.toLowerCase()}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handlePlanChange(plan.id)}
+                    disabled={!canChangePlan || isCurrentPlan || Boolean(isUpdatingThisPlan)}
+                    className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
+                      !canChangePlan || isCurrentPlan
+                        ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'
+                        : isFeatured
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                          : 'border border-slate-300 bg-white text-slate-950 hover:bg-slate-50'
+                    }`}
+                  >
+                    {isUpdatingThisPlan ? 'Updating...' : buttonText}
+                  </button>
+
+                  <div className="mt-8 space-y-3 border-t border-slate-200 pt-8">
+                    {featureRows.map((feature) => {
+                      const value = planFeatures[feature.key];
+
+                      return (
+                        <div key={feature.key} className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{feature.label}</p>
+                            <p className="text-xs text-slate-500">{feature.helper}</p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            {formatFeatureValue(value, feature.type)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Info Box */}
+          <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-slate-50 px-6 py-4">
+            <p className="text-sm text-slate-700">
+              <span className="font-semibold text-slate-900">Need a custom plan?</span> Contact our sales team for enterprise solutions.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,14 +1,16 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { ArrowLeft, MapPin, Clock, Mail, Phone, Linkedin, Star, ExternalLink, Send, Loader } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Mail, Phone, Linkedin, Star, ExternalLink, Send, Loader, Heart, MessageSquare } from "lucide-react";
 import { useRecruiterBySlug } from "@/hooks/useRecruiter";
 import { useLanguage } from "@/providers/language-provider";
-import { fetchFormTemplates, submitRecruiterRequest, type FormTemplate, type FormAnswer } from "@/lib/forms-api";
+import { fetchFormTemplates, submitRecruiterRequest, fetchRequests, type FormTemplate, type FormAnswer, type RecruitRequest } from "@/lib/forms-api";
+import { profileApi } from "@/lib/profile-api";
 import { FormRenderer } from "@/components/forms/form-renderer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -19,7 +21,16 @@ function formatSlugToName(slug: string) {
     .join(" ");
 }
 
+const REQUEST_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Requested",
+  COUNTER_PROPOSED: "Counter Proposed",
+  ACCEPTED: "Request Accepted",
+  COMPLETED: "Engagement Completed",
+  DECLINED: "Request Declined",
+};
+
 export default function RecruiterDetailPage() {
+  const router = useRouter();
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const { recruiter, loading, error } = useRecruiterBySlug(slug);
@@ -30,6 +41,20 @@ export default function RecruiterDetailPage() {
   const [formTemplate, setFormTemplate] = useState<FormTemplate | null>(null);
   const [isLoadingForm, setIsLoadingForm] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isShortlistOpen, setIsShortlistOpen] = useState(false);
+  const [shortlistNote, setShortlistNote] = useState("");
+  const [isSavingShortlist, setIsSavingShortlist] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingReview, setRatingReview] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [isLoadingInteraction, setIsLoadingInteraction] = useState(false);
+  const [existingRequest, setExistingRequest] = useState<RecruitRequest | null>(null);
+  const [isShortlisted, setIsShortlisted] = useState(false);
+  const [canRateRecruiter, setCanRateRecruiter] = useState(false);
+  const [hasRatedRecruiter, setHasRatedRecruiter] = useState(false);
+  const [existingRatingValue, setExistingRatingValue] = useState<number | null>(null);
+  const [existingRatingReview, setExistingRatingReview] = useState("");
 
   const isCompany = session?.user?.role === "COMPANY";
 
@@ -39,7 +64,7 @@ export default function RecruiterDetailPage() {
       try {
         setIsLoadingForm(true);
         const templates = await fetchFormTemplates();
-        const activeTemplate = templates.find((t) => t.isActive) || templates[0];
+        const activeTemplate = templates.find((t) => t.isActive !== false);
         setFormTemplate(activeTemplate || null);
       } catch (error) {
         console.error("Failed to load form template:", error);
@@ -52,6 +77,59 @@ export default function RecruiterDetailPage() {
     loadFormTemplate();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCompanyInteractionState = async () => {
+      if (!isCompany || !recruiter?.id) {
+        setExistingRequest(null);
+        setIsShortlisted(false);
+        setCanRateRecruiter(false);
+        setHasRatedRecruiter(false);
+        setExistingRatingValue(null);
+        setExistingRatingReview("");
+        return;
+      }
+
+      try {
+        setIsLoadingInteraction(true);
+
+        const [requests, shortlist, ratingState] = await Promise.all([
+          fetchRequests(),
+          profileApi.getCompanyShortlist(),
+          profileApi.getMyRecruiterRating(recruiter.id),
+        ]);
+
+        if (cancelled) return;
+
+        const requestForRecruiter =
+          requests.find((request) => request.recruiterId === recruiter.id) ?? null;
+        const shortlistMatch = shortlist.some(
+          (item) => item.recruiterProfileId === recruiter.id,
+        );
+
+        setExistingRequest(requestForRecruiter);
+        setIsShortlisted(shortlistMatch);
+        setCanRateRecruiter(ratingState.canRate);
+        setHasRatedRecruiter(ratingState.hasRated);
+        setExistingRatingValue(ratingState.review?.rating ?? null);
+        setExistingRatingReview(ratingState.review?.comment ?? "");
+      } catch (error) {
+        console.error("Failed to load company interaction status:", error);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingInteraction(false);
+        }
+      }
+    };
+
+    void loadCompanyInteractionState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isCompany, recruiter?.id]);
+
   const handleFormSubmit = async (answers: FormAnswer[]) => {
     if (!recruiter || !formTemplate) return;
 
@@ -59,12 +137,13 @@ export default function RecruiterDetailPage() {
     setMessage(null);
 
     try {
-      await submitRecruiterRequest({
+      const createdRequest = await submitRecruiterRequest({
         formTemplateId: formTemplate.id,
         recruiterId: recruiter.id,
         answers,
       });
 
+      setExistingRequest(createdRequest);
       setMessage({ type: "success", text: "Request sent successfully!" });
       setIsFormOpen(false);
       
@@ -76,6 +155,69 @@ export default function RecruiterDetailPage() {
       setMessage({ type: "error", text: errorMessage });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAddToShortlist = async () => {
+    if (!recruiter) return;
+
+    setIsSavingShortlist(true);
+    setMessage(null);
+
+    try {
+      await profileApi.addRecruiterToShortlist(
+        recruiter.id,
+        shortlistNote.trim() || undefined,
+      );
+
+      setIsShortlisted(true);
+      setMessage({ type: "success", text: "Recruiter added to shortlist." });
+      setIsShortlistOpen(false);
+      setShortlistNote("");
+
+      setTimeout(() => setMessage(null), 2000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to save shortlist item. Please try again.";
+      setMessage({ type: "error", text: errorMessage });
+    } finally {
+      setIsSavingShortlist(false);
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (!recruiter || ratingValue === 0) return;
+
+    setIsSubmittingRating(true);
+    setMessage(null);
+
+    try {
+      await profileApi.rateRecruiter(
+        recruiter.id,
+        ratingValue,
+        ratingReview.trim() || undefined,
+      );
+
+      setCanRateRecruiter(true);
+      setHasRatedRecruiter(true);
+      setExistingRatingValue(ratingValue);
+      setExistingRatingReview(ratingReview.trim());
+      setMessage({ type: "success", text: "Thank you for your rating!" });
+      setIsRatingOpen(false);
+      setRatingValue(0);
+      setRatingReview("");
+
+      setTimeout(() => setMessage(null), 2000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit rating. Please try again.";
+      setMessage({ type: "error", text: errorMessage });
+    } finally {
+      setIsSubmittingRating(false);
     }
   };
 
@@ -202,6 +344,19 @@ export default function RecruiterDetailPage() {
     .map((t) => t.skill);
   const linkedinLink = recruiter.links.find((l) => l.type === "LINKEDIN");
   const phoneLink = recruiter.links.find((l) => l.type === "PHONE");
+  const hasRequestedRecruiter = Boolean(existingRequest);
+  const requestStatusLabel = existingRequest
+    ? REQUEST_STATUS_LABELS[existingRequest.status] || `Requested (${existingRequest.status})`
+    : null;
+
+  const handlePrimaryAction = () => {
+    if (hasRequestedRecruiter && existingRequest?.id) {
+      router.push(`/dashboard?tab=requests&requestId=${existingRequest.id}`);
+      return;
+    }
+
+    setIsFormOpen(true);
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 py-8 sm:px-6 lg:px-8">
@@ -251,7 +406,7 @@ export default function RecruiterDetailPage() {
                 </p>
                 {recruiter.tagline && (
                   <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 italic">
-                    "{recruiter.tagline}"
+                    &ldquo;{recruiter.tagline}&rdquo;
                   </p>
                 )}
               </div>
@@ -304,13 +459,12 @@ export default function RecruiterDetailPage() {
               </div>
             )}
 
-            {/* Action buttons - improved layout */}
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap gap-2">
+            {/* Contact Links - always visible */}
+              <div className="flex flex-wrap gap-2 pt-4">
                 {recruiter.publicEmail && (
                   <a
                     href={`mailto:${recruiter.publicEmail}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     <Mail className="h-4 w-4" />
                     Email
@@ -319,7 +473,7 @@ export default function RecruiterDetailPage() {
                 {(recruiter.publicPhone || phoneLink) && (
                   <a
                     href={`tel:${recruiter.publicPhone || phoneLink?.url}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     <Phone className="h-4 w-4" />
                     Call
@@ -330,7 +484,7 @@ export default function RecruiterDetailPage() {
                     href={linkedinLink.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     <Linkedin className="h-4 w-4" />
                     LinkedIn
@@ -345,7 +499,7 @@ export default function RecruiterDetailPage() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                      className="inline-flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >
                       <ExternalLink className="h-4 w-4" />
                       {link.label}
@@ -353,30 +507,92 @@ export default function RecruiterDetailPage() {
                   ))}
               </div>
 
-              {/* Request Button for Companies - Primary CTA */}
+            {/* Action buttons - improved layout */}
+            <div className="mt-8 space-y-3">
+              {/* Primary Action */}
               {isCompany && (
-                <button
-                  onClick={() => setIsFormOpen(true)}
-                  disabled={isSubmitting || isLoadingForm || !formTemplate}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-700 dark:hover:bg-emerald-600 whitespace-nowrap"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader className="h-4 w-4 animate-spin" />
-                      Requesting...
-                    </>
-                  ) : isLoadingForm ? (
-                    <>
-                      <Loader className="h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Request Recruiter
-                    </>
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={handlePrimaryAction}
+                    disabled={
+                      isSubmitting ||
+                      isLoadingForm ||
+                      isLoadingInteraction ||
+                      !formTemplate
+                    }
+                    className="w-full inline-flex items-center justify-center gap-2.5 rounded-lg bg-primary-text px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-primary-text/80 active:bg-primary-text disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Requesting...</span>
+                      </>
+                    ) : isLoadingForm ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Loading...</span>
+                      </>
+                    ) : isLoadingInteraction ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>Checking status...</span>
+                      </>
+                    ) : hasRequestedRecruiter && requestStatusLabel ? (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>{requestStatusLabel}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Request Recruiter</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Secondary Actions */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Message */}
+                    <Link
+                      href={`/messages?recruiterId=${recruiter.id}&name=${encodeURIComponent(displayName)}`}
+                      className="inline-flex flex-col items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-3 text-xs font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <MessageSquare className="h-5 w-5" />
+                      <span className="hidden sm:inline">Message</span>
+                      <span className="sm:hidden">Chat</span>
+                    </Link>
+
+                    {/* Rate */}
+                    <button
+                      onClick={() => {
+                        setRatingValue(existingRatingValue ?? 0);
+                        setRatingReview(existingRatingReview);
+                        setIsRatingOpen(true);
+                      }}
+                      disabled={isSubmittingRating || isLoadingInteraction || (!canRateRecruiter && !hasRatedRecruiter)}
+                      className="inline-flex flex-col items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-3 text-xs font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <Star className={`h-5 w-5 ${hasRatedRecruiter ? "fill-amber-400 text-amber-400" : ""}`} />
+                      <span className="hidden sm:inline">{hasRatedRecruiter ? "Rated" : "Rate"}</span>
+                      <span className="sm:hidden">★</span>
+                    </button>
+
+                    {/* Shortlist */}
+                    <button
+                      onClick={() => setIsShortlistOpen(true)}
+                      disabled={isSavingShortlist || isLoadingInteraction || isShortlisted}
+                      className="inline-flex flex-col items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-3 text-xs font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      {isSavingShortlist ? (
+                        <Loader className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Heart className={`h-5 w-5 ${isShortlisted ? "fill-rose-500 text-rose-500" : ""}`} />
+                      )}
+                      <span className="hidden sm:inline">{isShortlisted ? "Saved" : "Save"}</span>
+                      <span className="sm:hidden">❤</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 
@@ -478,7 +694,7 @@ export default function RecruiterDetailPage() {
               Request {displayName}
             </DialogTitle>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 font-normal">
-              Tell us about your needs and we'll connect you shortly
+              Tell us about your needs and we&apos;ll connect you shortly
             </p>
           </DialogHeader>
 
@@ -507,6 +723,128 @@ export default function RecruiterDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Shortlist Note Dialog */}
+      <Dialog open={isShortlistOpen} onOpenChange={setIsShortlistOpen}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+              Add {displayName} to Shortlist
+            </DialogTitle>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Add an internal note so your team knows why this recruiter is shortlisted.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <textarea
+              value={shortlistNote}
+              onChange={(event) => setShortlistNote(event.target.value)}
+              rows={5}
+              placeholder="Example: Strong fintech track record, fast response, ideal for VP Eng search."
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500"
+            />
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsShortlistOpen(false)}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                disabled={isSavingShortlist}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleAddToShortlist()}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                disabled={isSavingShortlist}
+              >
+                {isSavingShortlist ? "Saving..." : "Save to Shortlist"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rating Dialog */}
+      <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+              {hasRatedRecruiter ? "Update Rating" : "Rate"} {displayName}
+            </DialogTitle>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {hasRatedRecruiter
+                ? "Update your feedback for this recruiter"
+                : "Share your experience working with this recruiter"}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Star Rating */}
+            <div className="flex justify-center gap-2 py-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRatingValue(star)}
+                  className="transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`h-10 w-10 ${
+                      star <= ratingValue
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-zinc-300 dark:text-zinc-600"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Review Text Area */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-2">
+                Add a review (optional)
+              </label>
+              <textarea
+                value={ratingReview}
+                onChange={(event) => setRatingReview(event.target.value)}
+                rows={4}
+                placeholder="Share your feedback about this recruiter's professionalism, responsiveness, and match quality..."
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRatingOpen(false);
+                  setRatingValue(0);
+                  setRatingReview("");
+                }}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                disabled={isSubmittingRating}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSubmitRating()}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                disabled={isSubmittingRating || ratingValue === 0}
+              >
+                {isSubmittingRating
+                  ? "Submitting..."
+                  : hasRatedRecruiter
+                    ? "Update Rating"
+                    : "Submit Rating"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -522,26 +860,6 @@ function TagCard({ title, tags }: { title: string; tags: { id: string; skill: { 
           <span
             key={tag.id}
             className="inline-block rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-          >
-            {tag.skill.value}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TagSection({ title, tags }: { title: string; tags: { id: string; skill: { value: string } }[] }) {
-  return (
-    <div>
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-        {title}
-      </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <span
-            key={tag.id}
-            className="inline-block rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
           >
             {tag.skill.value}
           </span>
