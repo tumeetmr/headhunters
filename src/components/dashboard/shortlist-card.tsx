@@ -5,7 +5,7 @@ import { type ShortlistedRecruiter } from "@/components/dashboard/shortlist-card
 import { Button } from "@/components/ui/button";
 import { Heart, MapPin, Star } from "lucide-react";
 
-interface FullWidthShortlistCardProps {
+interface listCardProps {
   item: ShortlistedRecruiter;
   onRemove?: (id: string) => void;
   onClick?: () => void;
@@ -34,7 +34,7 @@ function prettyDate(input?: string | null) {
   });
 }
 
-export function FullWidthShortlistCard({ item, onRemove, onClick }: FullWidthShortlistCardProps) {
+export function ShortlistCard({ item, onRemove, onClick }: listCardProps) {
   const recruiter = item.recruiter;
   const displayName = recruiter.user?.name || "Unknown Recruiter";
 

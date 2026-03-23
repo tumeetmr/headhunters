@@ -1,90 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { get } from "@/lib/api";
+import { recruitersApi, type Recruiter } from "@/lib/api/modules/recruiters";
 
-export interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  username?: string | null;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RecruiterSkill {
-  id: string;
-  type: string;
-  value: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RecruiterTag {
-  id: string;
-  recruiterProfileId: string | null;
-  companyId: string | null;
-  skillId: string;
-  skill: RecruiterSkill;
-  meta: unknown | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RecruiterLink {
-  id: string;
-  recruiterProfileId: string;
-  type: "LINKEDIN" | "PHONE" | string;
-  label: string;
-  url: string;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RecruiterInsight {
-  id: string;
-  recruiterProfileId: string;
-  title: string;
-  description: string | null;
-  mediaUrl: string;
-  thumbnailUrl: string | null;
-  status: string;
-  sortOrder: number;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Recruiter {
-  id: string;
-  userId: string;
-  slug: string;
-  title: string;
-  tagline: string | null;
-  bio: string;
-  photoUrl: string | null;
-  heroImageUrl: string | null;
-  yearsExperience: number | null;
-  isLeadPartner: boolean;
-  partnerBadge: string | null;
-  publicEmail: string | null;
-  publicPhone: string | null;
-  location: string | null;
-  timezone: string | null;
-  rating: number;
-  visibility: string;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  tags: RecruiterTag[];
-  links: RecruiterLink[];
-  activeSearches: unknown[];
-  insights: RecruiterInsight[];
-  user: User;
-}
+export type { Recruiter };
 
 interface UseRecruiterReturn {
   recruiters: Recruiter[];
@@ -102,9 +21,7 @@ export function useRecruiter(): UseRecruiterReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await get<Recruiter[]>("/recruiters", {
-        params: { visibility: "PUBLISHED" },
-      });
+      const data = await recruitersApi.fetchRecruiters();
       setRecruiters(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch recruiters");
@@ -137,7 +54,7 @@ export function useRecruiterBySlug(slug: string): UseRecruiterBySlugReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await get<Recruiter>(`/recruiters/slug/${slug}`);
+      const data = await recruitersApi.fetchRecruiterBySlug(slug);
       setRecruiter(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch recruiter");

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { MapPin, Search, Star, ChevronRight, X, Filter } from "lucide-react";
+import { Search, Star, X, Filter } from "lucide-react";
 import { useRecruiter } from "@/hooks/useRecruiter";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -162,14 +162,9 @@ function RecruitersPageContent() {
     (ratingMin > 0 || ratingMax < 5 ? 1 : 0);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950">Browse Recruiters</h1>
-        <p className="mt-2 text-sm text-slate-600">Find and connect with top recruiters</p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <main className="min-h-[calc(100vh-8rem)] bg-slate-50">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         {/* MOBILE FILTER TOGGLE */}
         <div className="lg:hidden mb-4">
           <button
@@ -188,56 +183,35 @@ function RecruitersPageContent() {
 
         {/* LEFT SIDEBAR - FILTERS */}
         <div
-          className={`space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto
+          className={`space-y-3 pb-6 lg:sticky lg:top-20 lg:z-40 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-0
             ${showFilters ? "block" : "hidden lg:block"}
-            pb-6 lg:pb-0
           `}
         >
-          {/* SEARCH HEADING */}
-          <div>
-            <h2 className="text-2xl font-bold text-slate-950">Search</h2>
-          </div>
-
           {/* SEARCH BOX */}
           <div className="relative">
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-11 border-2 border-slate-200 bg-white px-4 rounded-lg text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
-              placeholder="Search by name..."
+              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
+              placeholder="Search..."
             />
-            <Search className="absolute right-3 top-3 size-5 text-slate-400 pointer-events-none" />
+            <Search className="absolute right-2.5 top-2.5 size-4 text-slate-400 pointer-events-none" />
           </div>
-
-          {/* RECOMMENDED FOR YOU */}
-          <button className="w-full flex items-center gap-3 rounded-lg border border-slate-300 bg-linear-to-r from-slate-50 to-slate-100 px-3 py-3 text-left hover:bg-slate-100 transition-colors">
-            <div className="flex size-9 items-center justify-center rounded-full bg-slate-900 shrink-0">
-              <span className="text-white font-bold text-xs">AI</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900">AI Recommendations</p>
-              <p className="text-xs text-slate-500">Personalized matches</p>
-            </div>
-            <ChevronRight className="size-4 text-slate-400 shrink-0" />
-          </button>
 
           {/* CLEAR FILTERS */}
           {activeFilterCount > 0 && (
             <button
               onClick={clearAllFilters}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <X className="size-4" />
-              Clear All
+              <X className="size-3" />
+              Clear
             </button>
           )}
 
-          {/* DIVIDER */}
-          <div className="border-t border-slate-200"></div>
-
           {/* QUICK FILTERS */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Quick Filters</h3>
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Quick</h3>
             <div className="flex flex-wrap gap-2">
               {quickFilters.map((filter) => (
                 <button
@@ -256,8 +230,8 @@ function RecruitersPageContent() {
           </div>
 
           {/* LEVEL SECTION */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Level</h3>
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Level</h3>
             <div className="flex flex-wrap gap-2">
               {levels.map((level) => (
                 <button
@@ -276,8 +250,8 @@ function RecruitersPageContent() {
           </div>
 
           {/* INDUSTRY SECTION */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Industry</h3>
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Industry</h3>
             <div className="flex flex-wrap gap-2">
               {industries.map((industry) => (
                 <button
@@ -296,13 +270,13 @@ function RecruitersPageContent() {
           </div>
 
           {/* RATING SECTION */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Rating</h3>
-            <div className="flex gap-2">
-              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold min-w-fit">
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Rating</h3>
+            <div className="flex gap-1.5">
+              <div className="flex items-center justify-center rounded bg-slate-900 text-white px-2 py-1 text-xs font-semibold min-w-fit">
                 {ratingMin.toFixed(1)}★
               </div>
-              <div className="flex items-center justify-center rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold min-w-fit">
+              <div className="flex items-center justify-center rounded bg-slate-900 text-white px-2 py-1 text-xs font-semibold min-w-fit">
                 {ratingMax.toFixed(1)}★
               </div>
             </div>
@@ -323,8 +297,8 @@ function RecruitersPageContent() {
           </div>
 
           {/* SORT OPTIONS */}
-          <div className="space-y-3 border-t border-slate-200 pt-6">
-            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Sort</h3>
+          <div className="space-y-2 border-t border-slate-200 pt-3">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Sort</h3>
             <div className="space-y-2">
               {sortOptions.map((option) => (
                 <label key={option.id} className="flex items-center gap-3 cursor-pointer">
@@ -494,6 +468,7 @@ function RecruitersPageContent() {
           )}
         </div>
       </div>
+    </div>
     </main>
   );
 }
@@ -502,17 +477,19 @@ export default function RecruitersPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-slate-200 bg-white animate-pulse">
-                <CardContent className="pt-6">
-                  <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/4 mb-3"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
+        <main className="min-h-[calc(100vh-8rem)] bg-slate-50">
+          <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="border-slate-200 bg-white animate-pulse">
+                  <CardContent className="pt-6">
+                    <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                    <div className="h-4 bg-slate-200 rounded w-1/4 mb-3"></div>
+                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </main>
       }

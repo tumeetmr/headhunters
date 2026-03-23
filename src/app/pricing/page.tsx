@@ -155,19 +155,15 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/register');
-    }
-  }, [router, status]);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
+    if (status === 'loading') {
       return;
     }
 
     const fetchPlans = async () => {
       try {
+        setLoading(true);
         setError(null);
         const response = await get<SubscriptionPlan[]>('/subscriptions/plans');
         const activePlans = Array.isArray(response)
@@ -175,7 +171,7 @@ export default function PricingPage() {
           : [];
         setPlans(activePlans);
 
-        if (session.user?.role === 'COMPANY') {
+        if (status === 'authenticated' && session?.user?.role === 'COMPANY') {
           const profile = await profileApi.getUserProfile();
           setCompanyId(profile.company?.id ?? null);
 
@@ -201,6 +197,11 @@ export default function PricingPage() {
   }, [session?.user?.role, status]);
 
   const handlePlanChange = async (planId: string) => {
+    if (status === 'unauthenticated') {
+      router.push('/register');
+      return;
+    }
+
     if (!companyId || session?.user?.role !== 'COMPANY') {
       return;
     }
@@ -247,11 +248,11 @@ export default function PricingPage() {
 
   const hasActivePlans = sortedPlans.length > 0;
 
-  if (status === 'loading' || status === 'unauthenticated') {
+  if (status === 'loading') {
     return (
       <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex min-h-96 items-center justify-center rounded-2xl border border-slate-200 bg-white">
-          <div className="text-slate-600">Checking your account...</div>
+          <div className="text-slate-600">Loading pricing plans...</div>
         </div>
       </main>
     );
@@ -327,17 +328,17 @@ export default function PricingPage() {
               const planPrice = getPriceNumber(plan.price);
               const isUpgrade = currentPlanPrice !== null ? planPrice > currentPlanPrice : false;
               const isDowngrade = currentPlanPrice !== null ? planPrice < currentPlanPrice : false;
-              const canChangePlan = Boolean(isCompany && companyId);
+              const canChangePlan = Boolean(isCompany && companyId) || status === 'unauthenticated';
               const isUpdatingThisPlan = updatingPlanId === plan.id;
 
               let buttonText = 'Choose Plan';
-              if (isCurrentPlan) {
+              if (isCurrentPlan && isCompany) {
                 buttonText = 'Current Plan';
               } else if (isUpgrade) {
                 buttonText = 'Upgrade';
               } else if (isDowngrade) {
                 buttonText = 'Downgrade';
-              } else if (canChangePlan) {
+              } else if (isCompany && canChangePlan) {
                 buttonText = 'Switch Plan';
               }
 
@@ -372,9 +373,9 @@ export default function PricingPage() {
 
                   <button
                     onClick={() => handlePlanChange(plan.id)}
-                    disabled={!canChangePlan || isCurrentPlan || Boolean(isUpdatingThisPlan)}
+                    disabled={isCurrentPlan || Boolean(isUpdatingThisPlan)}
                     className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
-                      !canChangePlan || isCurrentPlan
+                      isCurrentPlan
                         ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'
                         : isFeatured
                           ? 'bg-emerald-600 text-white hover:bg-emerald-700'

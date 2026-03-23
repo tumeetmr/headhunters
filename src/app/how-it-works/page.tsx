@@ -1,5 +1,4 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/dist/client/link";
 
@@ -20,9 +19,6 @@ const recruiterSteps = [
 export default function HowItWorksPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-black tracking-tight text-slate-950">How It Works</h1>
-      <p className="mt-2 text-slate-600">A trust-first workflow inspired by modern marketplaces and milestone contracts.</p>
-
       <Tabs defaultValue="company" className="mt-6">
         <TabsList className="bg-slate-100">
           <TabsTrigger value="company">For Companies</TabsTrigger>

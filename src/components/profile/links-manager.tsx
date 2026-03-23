@@ -5,6 +5,7 @@ import { X, Plus, Linkedin, Mail, Globe, Phone, MessageCircle, Calendar } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { profileApi, type Link } from "@/lib/profile-api";
+import { toApiError } from "@/lib/api/modules/common";
 
 interface LinksManagerProps {
   links: Link[];
@@ -16,23 +17,42 @@ interface LinksManagerProps {
 const LINK_TYPES = [
   "WEBSITE",
   "LINKEDIN",
-  "EMAIL",
-  "PHONE",
-  "WHATSAPP",
-  "TELEGRAM",
-  "CALENDAR",
+  "PORTFOLIO",
+  "GITHUB",
+  "TWITTER",
   "OTHER",
-];
+] as const;
 
 const LINK_ICONS: Record<string, React.ReactNode> = {
   WEBSITE: <Globe className="w-4 h-4" />,
   LINKEDIN: <Linkedin className="w-4 h-4" />,
-  EMAIL: <Mail className="w-4 h-4" />,
-  PHONE: <Phone className="w-4 h-4" />,
-  WHATSAPP: <MessageCircle className="w-4 h-4" />,
-  TELEGRAM: <MessageCircle className="w-4 h-4" />,
-  CALENDAR: <Calendar className="w-4 h-4" />,
+  PORTFOLIO: <Globe className="w-4 h-4" />,
+  GITHUB: <Globe className="w-4 h-4" />,
+  TWITTER: <MessageCircle className="w-4 h-4" />,
+  OTHER: <Globe className="w-4 h-4" />,
 };
+
+function normalizeUrl(rawUrl: string) {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  return withProtocol;
+}
+
+function isValidUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export default function LinksManager({
   links,
@@ -47,8 +67,9 @@ export default function LinksManager({
   const [error, setError] = useState<string | null>(null);
 
   const handleAddLink = async () => {
-    if (!newLink.url.trim() || !recruiterId) {
-      setError("Please enter a valid URL");
+    const normalizedUrl = normalizeUrl(newLink.url);
+    if (!normalizedUrl || !recruiterId || !isValidUrl(normalizedUrl)) {
+      setError("Please enter a valid URL (example: https://example.com)");
       return;
     }
 
@@ -57,7 +78,7 @@ export default function LinksManager({
       const createdLink = await profileApi.addLink(recruiterId, {
         type: newLink.type,
         label: newLink.label || undefined,
-        url: newLink.url,
+        url: normalizedUrl,
       });
 
       const updated = [...localLinks, createdLink];
@@ -68,7 +89,7 @@ export default function LinksManager({
       setError(null);
     } catch (err) {
       console.error("Failed to add link", err);
-      setError("Failed to add link");
+      setError(toApiError(err).message);
     } finally {
       setLoading(false);
     }
@@ -83,7 +104,7 @@ export default function LinksManager({
       onLinksChange?.(updated);
     } catch (err) {
       console.error("Failed to remove link", err);
-      setError("Failed to remove link");
+      setError(toApiError(err).message);
     } finally {
       setLoading(false);
     }

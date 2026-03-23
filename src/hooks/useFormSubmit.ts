@@ -2,12 +2,12 @@
 
 import { useState, useCallback } from "react";
 import {
-  submitRecruiterRequest,
-  fetchFormTemplates,
+  formsApi,
   FormTemplate,
   FormAnswer,
   RecruitRequest,
 } from "@/lib/forms-api";
+import { toApiError } from "@/lib/api/modules/common";
 
 interface UseFormSubmitOptions {
   onSuccess?: (request: RecruitRequest) => void;
@@ -31,7 +31,7 @@ export function useFormSubmit(options?: UseFormSubmitOptions) {
       setSuccessMessage(null);
 
       try {
-        const request = await submitRecruiterRequest({
+        const request = await formsApi.submitRecruiterRequest({
           formTemplateId: templateId,
           ...(recruiterId && { recruiterId }),
           ...(companyId && { companyId }),
@@ -42,10 +42,11 @@ export function useFormSubmit(options?: UseFormSubmitOptions) {
         options?.onSuccess?.(request);
         return request;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error("Unknown error");
-        setError(error);
-        options?.onError?.(error);
-        throw error;
+        const apiError = toApiError(err);
+        const normalized = new Error(apiError.message);
+        setError(normalized);
+        options?.onError?.(normalized);
+        throw normalized;
       } finally {
         setIsLoading(false);
       }
@@ -81,11 +82,11 @@ export function useFormTemplates(options?: UseFormTemplatesOptions) {
     setError(null);
 
     try {
-      const data = await fetchFormTemplates();
+      const data = await formsApi.fetchFormTemplates();
       setTemplates(data.filter((t) => t.isActive !== false));
     } catch (err) {
-      const error = err instanceof Error ? err : new Error("Unknown error");
-      setError(error);
+      const apiError = toApiError(err);
+      setError(new Error(apiError.message));
     } finally {
       setIsLoading(false);
     }

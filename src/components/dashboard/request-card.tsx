@@ -9,7 +9,7 @@ import { ChevronRight, MapPin, Briefcase, MessageSquare, User, Star } from "luci
 import Link from "next/link";
 import Image from "next/image";
 
-interface FullWidthRequestCardProps {
+interface stCardProps {
   request: RecruitRequest;
   role?: string;
   onClick?: () => void;
@@ -43,12 +43,12 @@ function prettyDate(input?: string | null) {
   });
 }
 
-export function FullWidthRequestCard({
+export function RequestCard({
   request,
   role,
   onClick,
   onMessage,
-}: FullWidthRequestCardProps) {
+}: stCardProps) {
   const positionTitle = answerByKey(request, "position_title");
   
   // For company side, show recruiter info

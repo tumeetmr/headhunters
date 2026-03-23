@@ -1,20 +1,18 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   MapPin,
   Briefcase,
-  ChevronRight,
   Search,
   X,
   Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -292,15 +290,9 @@ function JobsPageContent() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950">Job Openings</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Real hiring mandates. Clear budgets. Find perfect matches and submit proposals.
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <main className="min-h-[calc(100vh-8rem)] bg-slate-50">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         {/* MOBILE FILTER TOGGLE */}
         <div className="mb-4 lg:hidden">
           <button
@@ -319,56 +311,37 @@ function JobsPageContent() {
 
         {/* LEFT SIDEBAR - FILTERS */}
         <div
-          className={`space-y-6 pb-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pb-0
+          className={`space-y-3 pb-6 lg:sticky lg:top-20 lg:z-40 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-0
             ${showFilters ? "block" : "hidden lg:block"}
           `}
         >
-          {/* SEARCH HEADING */}
-          <div>
-            <h2 className="text-2xl font-bold text-slate-950">Search</h2>
-          </div>
 
           {/* SEARCH BOX */}
           <div className="relative">
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-11 rounded-lg border-2 border-slate-200 bg-white px-4 text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
-              placeholder="Search by job title or skill"
+              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
+              placeholder="Search..."
             />
-            <Search className="pointer-events-none absolute right-3 top-3 size-5 text-slate-400" />
+            <Search className="pointer-events-none absolute right-2.5 top-2.5 size-4 text-slate-400" />
           </div>
-
-          {/* RECOMMENDED FOR YOU */}
-          <button className="flex w-full items-center gap-3 rounded-lg border border-slate-300 bg-linear-to-r from-slate-50 to-slate-100 px-3 py-3 text-left transition-colors hover:bg-slate-100">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900">
-              <span className="text-xs font-bold text-white">AI</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900">AI Recommendations</p>
-              <p className="text-xs text-slate-500">Personalized matches</p>
-            </div>
-            <ChevronRight className="size-4 shrink-0 text-slate-400" />
-          </button>
 
           {/* CLEAR FILTERS */}
           {activeFilterCount > 0 && (
             <button
               onClick={clearAllFilters}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
-              <X className="size-4" />
-              Clear All
+              <X className="size-3" />
+              Clear
             </button>
           )}
 
-          {/* DIVIDER */}
-          <div className="border-t border-slate-200"></div>
-
           {/* QUICK FILTERS */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">
-              Quick Filters
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+              Quick
             </h3>
             <div className="flex flex-wrap gap-2">
               {quickFilters.map((filter) => (
@@ -388,8 +361,8 @@ function JobsPageContent() {
           </div>
 
           {/* LEVEL SECTION */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">Level</h3>
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Level</h3>
             <div className="flex flex-wrap gap-2">
               {levels.map((level) => (
                 <button
@@ -408,9 +381,9 @@ function JobsPageContent() {
           </div>
 
           {/* JOB CATEGORY SECTION */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">
-              Job Category
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+              Category
             </h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
@@ -430,14 +403,14 @@ function JobsPageContent() {
           </div>
 
           {/* SALARY SECTION */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">Budget</h3>
-            <div className="flex gap-2">
-              <div className="flex min-w-fit items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
-                {(salaryMin / 1000000).toFixed(1)}M MNT
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Budget</h3>
+            <div className="flex gap-1.5">
+              <div className="flex min-w-fit items-center justify-center rounded bg-slate-900 px-2 py-1 text-xs font-semibold text-white">
+                {(salaryMin / 1000000).toFixed(1)}M
               </div>
-              <div className="flex min-w-fit items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
-                {(salaryMax / 1000000).toFixed(1)}M MNT
+              <div className="flex min-w-fit items-center justify-center rounded bg-slate-900 px-2 py-1 text-xs font-semibold text-white">
+                {(salaryMax / 1000000).toFixed(1)}M
               </div>
             </div>
             <Slider
@@ -458,8 +431,8 @@ function JobsPageContent() {
           </div>
 
           {/* SORT SECTION */}
-          <div className="space-y-3 border-t border-slate-200 pt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">Sort</h3>
+          <div className="space-y-2 border-t border-slate-200 pt-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Sort</h3>
             <div className="space-y-2">
               {sortOptions.map((option) => (
                 <label key={option.id} className="flex cursor-pointer items-center gap-3">
@@ -642,8 +615,9 @@ function JobsPageContent() {
           )}
         </div>
       </div>
+    </div>
 
-      <Dialog
+    <Dialog
         open={Boolean(selectedJob)}
         onOpenChange={(open) => {
           if (!open) {
@@ -719,17 +693,19 @@ export default function JobsPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="space-y-4">
-            {[1, 2, 3].map((idx) => (
-              <Card key={idx} className="animate-pulse border-slate-200 bg-white">
-                <CardContent className="pt-6">
-                  <div className="mb-4 h-6 w-1/3 rounded bg-slate-200"></div>
-                  <div className="mb-3 h-4 w-1/4 rounded bg-slate-200"></div>
-                  <div className="h-4 w-1/2 rounded bg-slate-200"></div>
-                </CardContent>
-              </Card>
-            ))}
+        <main className="min-h-[calc(100vh-8rem)] bg-slate-50">
+          <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="space-y-4">
+              {[1, 2, 3].map((idx) => (
+                <Card key={idx} className="animate-pulse border-slate-200 bg-white">
+                  <CardContent className="pt-6">
+                    <div className="mb-4 h-6 w-1/3 rounded bg-slate-200"></div>
+                    <div className="mb-3 h-4 w-1/4 rounded bg-slate-200"></div>
+                    <div className="h-4 w-1/2 rounded bg-slate-200"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </main>
       }

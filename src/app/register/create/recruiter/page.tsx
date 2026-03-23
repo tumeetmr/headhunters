@@ -12,7 +12,6 @@ import { useLanguage } from "@/providers/language-provider";
 type StepIndex = 1 | 2;
 
 type CreateRecruiterPayload = {
-  userId: string;
   slug: string;
   title: string;
   tagline: string;
@@ -67,7 +66,6 @@ export default function CreateRecruiterPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
-  const [userId, setUserId] = useState("");
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [bio, setBio] = useState("");
@@ -114,7 +112,6 @@ export default function CreateRecruiterPage() {
         return;
       }
 
-      setUserId(session.user.id ?? "");
       setEmail(session.user.email ?? "");
       setPublicEmail(session.user.email ?? "");
       setIsCheckingSession(false);
@@ -175,13 +172,7 @@ export default function CreateRecruiterPage() {
       return;
     }
 
-    if (!userId) {
-      setError(t("register.missingUserId"));
-      return;
-    }
-
     const payload: CreateRecruiterPayload = {
-      userId,
       slug: slugify(title),
       title: title.trim(),
       tagline: tagline.trim(),

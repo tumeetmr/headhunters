@@ -13,7 +13,7 @@ const socialLinks = [
 export default function Footer() {
   const navLinks = [
     { label: "Find Recruiters", href: "/recruiters" },
-    { label: "Browse Projects", href: "/projects" },
+    { label: "Browse Jobs", href: "/jobs" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },

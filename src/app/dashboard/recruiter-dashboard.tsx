@@ -12,7 +12,7 @@ import {
   NotificationsCards,
   type Notification,
 } from "@/components/dashboard/notifications-cards";
-import { FullWidthRequestCard } from "@/components/dashboard/full-width-request-card";
+import { RequestCard } from "@/components/dashboard/request-card";
 import { RequestDetailDialog } from "@/components/requests/request-detail-dialog";
 import { ProposalCard } from "@/components/dashboard/proposal-card";
 import { Button } from "@/components/ui/button";
@@ -539,7 +539,7 @@ export function RecruiterDashboard() {
                             className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                             style={{ animationDelay: `${i * 50}ms` }}
                           >
-                            <FullWidthRequestCard
+                            <RequestCard
                               request={request}
                               role="RECRUITER"
                               onClick={() => handleRequestClick(request)}
@@ -645,7 +645,7 @@ export function RecruiterDashboard() {
                         className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                         style={{ animationDelay: `${i * 50}ms` }}
                       >
-                        <FullWidthRequestCard
+                        <RequestCard
                           request={request}
                           role="RECRUITER"
                           onClick={() => handleRequestClick(request)}

@@ -500,7 +500,7 @@ export default function CompanyProfile({ user, onProfileUpdated }: CompanyProfil
       <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Edit Company Profile</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Edit Company Profile</DialogTitle>
           </DialogHeader>
           <CompanyManager 
             profile={company} 
@@ -514,7 +514,7 @@ export default function CompanyProfile({ user, onProfileUpdated }: CompanyProfil
       <Dialog open={isSkillsDialogOpen} onOpenChange={setIsSkillsDialogOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Edit Skills</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Edit Skills</DialogTitle>
           </DialogHeader>
           <SkillsManager
             companyId={company.id}

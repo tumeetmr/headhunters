@@ -13,8 +13,8 @@ import {
   type Notification,
 } from "@/components/dashboard/notifications-cards";
 import { type ShortlistedRecruiter } from "@/components/dashboard/shortlist-cards";
-import { FullWidthRequestCard } from "@/components/dashboard/full-width-request-card";
-import { FullWidthShortlistCard } from "@/components/dashboard/full-width-shortlist-card";
+import { RequestCard } from "@/components/dashboard/request-card";
+import { ShortlistCard } from "@/components/dashboard/shortlist-card";
 import { ProposalCard, formatProposalStatus, proposalStatusClass } from "@/components/dashboard/proposal-card";
 import { RequestDetailDialog } from "@/components/requests/request-detail-dialog";
 import {
@@ -656,7 +656,7 @@ export function CompanyDashboard() {
                             className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                             style={{ animationDelay: `${i * 50}ms` }}
                           >
-                            <FullWidthRequestCard
+                            <RequestCard
                               request={request}
                               role="COMPANY"
                               onClick={() => handleRequestClick(request)}
@@ -738,7 +738,7 @@ export function CompanyDashboard() {
                             className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                             style={{ animationDelay: `${i * 50}ms` }}
                           >
-                            <FullWidthShortlistCard 
+                            <ShortlistCard 
                               item={item} 
                               onRemove={handleRemoveFromShortlist}
                               onClick={() => handleNavigateToRecruiter(item.recruiter.slug)}
@@ -782,7 +782,7 @@ export function CompanyDashboard() {
                         className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                         style={{ animationDelay: `${i * 50}ms` }}
                       >
-                        <FullWidthRequestCard
+                        <RequestCard
                           request={request}
                           role="COMPANY"
                           onClick={() => handleRequestClick(request)}
@@ -878,7 +878,7 @@ export function CompanyDashboard() {
                         className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                         style={{ animationDelay: `${i * 50}ms` }}
                       >
-                        <FullWidthShortlistCard 
+                        <ShortlistCard 
                           item={item} 
                           onRemove={handleRemoveFromShortlist}
                           onClick={() => handleNavigateToRecruiter(item.recruiter.id)}
